@@ -1,78 +1,78 @@
-# راهنمای استقرار و Push
+# Deployment Guide
 
-## آماده‌سازی برای Push
+## Preparation for Push
 
-### 1. بررسی فایل‌ها
+### 1. Check Files
 
 ```bash
-# بررسی ساختار پروژه
+# Check project structure
 ls -la
 
-# بررسی فایل‌های مهم
+# Check important files
 cat requirements.txt
 cat Dockerfile
 cat docker-compose.yml
 ```
 
-### 2. تست محلی
+### 2. Local Testing
 
 ```bash
-# نصب وابستگی‌ها
+# Install dependencies
 make install
-# یا
+# or
 pip install -r requirements.txt
 
-# تست اجرای Flask
+# Test Flask application
 make run
-# یا
-python app.py
+# or
+python backend/app.py
 
-# باز کردن مرورگر
+# Open browser
 open http://localhost:5000
 ```
 
-### 3. تست Docker
+### 3. Docker Testing
 
 ```bash
 # Build image
 make build
-# یا
+# or
 docker build -t vocab-learner .
 
 # Run container
 make docker-run
-# یا
+# or
 docker run -d -p 5000:5000 vocab-learner
 
-# تست
+# Test
 curl http://localhost:5000/health
 ```
 
-### 4. تست Docker Compose
+### 4. Docker Compose Testing
 
 ```bash
 make docker-compose-up
-# یا
+# or
 docker-compose up -d
 
-# مشاهده لاگ‌ها
+# View logs
 make docker-logs
-# یا
+# or
 docker-compose logs -f
 ```
 
-## Push به Git Repository
+## Push to Git Repository
 
-### ایجاد Repository جدید
+### Create New Repository
 
 ```bash
-# Initialize git (اگر قبلاً انجام نشده)
+# Initialize git (if not already done)
 git init
 
-# اضافه کردن remote
+# Add remote
 git remote add origin <your-repo-url>
 
-# اضافه کردن فایل‌ها
+# Add files
 git add .
 
 # Commit
@@ -82,7 +82,7 @@ git commit -m "Initial commit: Vocabulary Learning App with Docker and Helm"
 git push -u origin main
 ```
 
-### ساختار فایل‌های Git
+### Git File Structure
 
 ```
 vocab-learner/
@@ -90,16 +90,23 @@ vocab-learner/
 │   └── workflows/
 │       ├── ci.yml
 │       └── helm-deploy.yml
+├── backend/
+│   ├── app.py
+│   ├── vocab_learner.py
+│   └── daily_review.py
+├── frontend/
+│   ├── static/
+│   │   ├── css/
+│   │   └── js/
+│   ├── templates/
+│   │   └── index.html
+│   ├── package.json
+│   └── tsconfig.json
 ├── helm/
 │   └── vocab-learner/
 │       ├── Chart.yaml
 │       ├── values.yaml
 │       └── templates/
-├── static/
-│   ├── css/
-│   └── js/
-├── templates/
-│   └── index.html
 ├── .dockerignore
 ├── .gitignore
 ├── Dockerfile
@@ -107,22 +114,19 @@ vocab-learner/
 ├── README.md
 ├── DEPLOY.md
 ├── KUBERNETES.md
-├── app.py
-├── daily_review.py
 ├── docker-compose.yml
-├── requirements.txt
-└── vocab_learner.py
+└── requirements.txt
 ```
 
-## Push به Docker Hub
+## Push to Docker Hub
 
-### 1. Login به Docker Hub
+### 1. Login to Docker Hub
 
 ```bash
 docker login
 ```
 
-### 2. Tag و Push
+### 2. Tag and Push
 
 ```bash
 # Tag image
@@ -131,37 +135,37 @@ docker tag vocab-learner:latest <your-dockerhub-username>/vocab-learner:latest
 # Push
 docker push <your-dockerhub-username>/vocab-learner:latest
 
-# یا با version
+# Or with version
 docker tag vocab-learner:latest <your-dockerhub-username>/vocab-learner:v1.0.0
 docker push <your-dockerhub-username>/vocab-learner:v1.0.0
 ```
 
-### 3. استفاده از Image در docker-compose
+### 3. Use Image in docker-compose
 
-ویرایش `docker-compose.yml`:
+Edit `docker-compose.yml`:
 
 ```yaml
 services:
   vocab-app:
     image: <your-dockerhub-username>/vocab-learner:latest
-    # build: .  # این خط را comment کنید
+    # build: .  # Comment this line
 ```
 
-## استقرار در Kubernetes
+## Deploy to Kubernetes
 
-### با Helm
+### With Helm
 
 ```bash
-# نصب
+# Install
 helm install vocab-learner ./helm/vocab-learner \
   --set image.repository=<your-dockerhub-username>/vocab-learner \
   --set image.tag=latest
 
-# یا با values file
+# Or with values file
 helm install vocab-learner ./helm/vocab-learner -f values-custom.yaml
 ```
 
-### بررسی استقرار
+### Check Deployment
 
 ```bash
 # Pods
@@ -174,54 +178,54 @@ kubectl get svc vocab-learner
 kubectl logs -l app.kubernetes.io/name=vocab-learner -f
 ```
 
-## CI/CD با GitHub Actions
+## CI/CD with GitHub Actions
 
-### تنظیم Secrets در GitHub
+### Configure Secrets in GitHub
 
 1. Settings > Secrets and variables > Actions
-2. اضافه کردن:
-   - `DOCKER_USERNAME`: نام کاربری Docker Hub
-   - `DOCKER_PASSWORD`: رمز عبور Docker Hub
-   - `KUBECONFIG`: محتوای فایل kubeconfig (برای Kubernetes)
+2. Add:
+   - `DOCKER_USERNAME`: Docker Hub username
+   - `DOCKER_PASSWORD`: Docker Hub password
+   - `KUBECONFIG`: kubeconfig file content (for Kubernetes)
 
-### استفاده از Workflows
+### Using Workflows
 
-Workflow ها به صورت خودکار اجرا می‌شوند:
-- `ci.yml`: در هر push/PR
-- `helm-deploy.yml`: در push tag های v*
+Workflows run automatically:
+- `ci.yml`: On every push/PR
+- `helm-deploy.yml`: On push of v* tags
 
-## نکات مهم
+## Important Notes
 
-1. **Environment Variables**: برای production، از secrets استفاده کنید
-2. **Persistent Storage**: در Kubernetes، storage class را تنظیم کنید
-3. **Resource Limits**: بر اساس نیاز تنظیم کنید
-4. **Health Checks**: endpoint `/health` برای monitoring استفاده می‌شود
-5. **Security**: در production، HTTPS و authentication اضافه کنید
+1. **Environment Variables**: Use secrets for production
+2. **Persistent Storage**: Configure storage class in Kubernetes
+3. **Resource Limits**: Adjust based on needs
+4. **Health Checks**: The `/health` endpoint is used for monitoring
+5. **Security**: Add HTTPS and authentication for production
 
 ## Troubleshooting
 
-### مشکل در Build
+### Build Issues
 
 ```bash
-# بررسی Dockerfile
+# Check Dockerfile
 docker build --no-cache -t vocab-learner .
 
-# بررسی logs
+# Check logs
 docker build -t vocab-learner . 2>&1 | tee build.log
 ```
 
-### مشکل در Run
+### Run Issues
 
 ```bash
-# بررسی container
+# Check container
 docker ps -a
 docker logs <container-id>
 
-# بررسی port
+# Check port
 netstat -an | grep 5000
 ```
 
-### مشکل در Kubernetes
+### Kubernetes Issues
 
 ```bash
 # Describe pod
@@ -236,9 +240,9 @@ kubectl logs <pod-name> --previous
 
 ## Next Steps
 
-1. ✅ Push به Git
-2. ✅ Build و Push به Docker Hub
-3. ✅ استقرار در Kubernetes
-4. ✅ تنظیم CI/CD
-5. ✅ اضافه کردن Monitoring
-6. ✅ اضافه کردن Authentication (اختیاری)
+1. ✅ Push to Git
+2. ✅ Build and Push to Docker Hub
+3. ✅ Deploy to Kubernetes
+4. ✅ Configure CI/CD
+5. ✅ Add Monitoring
+6. ✅ Add Authentication (optional)

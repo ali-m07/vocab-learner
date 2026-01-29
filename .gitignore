@@ -63,3 +63,6 @@ yarn-error.log*
 *.js.map
 *.d.ts
 !static/js/app.js
+
+# Build output
+_site/

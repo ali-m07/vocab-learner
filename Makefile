@@ -6,23 +6,22 @@ help: ## Show available commands
 
 install: ## Install dependencies
 	pip install -r requirements.txt
-	npm install
-	npm run build
+	cd frontend && npm install && npm run build
 
 run: ## Run Flask application
 	python backend/app.py
 
 run-cli: ## Run CLI script
-	python vocab_learner.py
+	python backend/vocab_learner.py
 
 run-daily: ## Run daily review
-	python daily_review.py
+	python backend/daily_review.py
 
 build-ts: ## Build TypeScript
-	npm run build
+	cd frontend && npm run build
 
 watch-ts: ## Watch TypeScript for development
-	npm run watch
+	cd frontend && npm run watch
 
 build: ## Build Docker image
 	docker build -t vocab-learner:latest .

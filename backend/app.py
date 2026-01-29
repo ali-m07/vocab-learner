@@ -14,12 +14,19 @@ from datetime import datetime
 from vocab_learner import VocabularyLearner
 from daily_review import DailyReview
 
-app = Flask(__name__)
+# Get the project root directory (parent of backend)
+PROJECT_ROOT = Path(__file__).parent.parent
+
+app = Flask(
+    __name__,
+    template_folder=str(PROJECT_ROOT / 'frontend' / 'templates'),
+    static_folder=str(PROJECT_ROOT / 'frontend' / 'static')
+)
 CORS(app)
 
-# Settings
-DATA_DIR = Path("data")
-UPLOADS_DIR = Path("uploads")
+# Settings - data directories relative to project root
+DATA_DIR = PROJECT_ROOT / "data"
+UPLOADS_DIR = PROJECT_ROOT / "uploads"
 DATA_DIR.mkdir(exist_ok=True)
 UPLOADS_DIR.mkdir(exist_ok=True)
 

@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  # این workflow فقط برای تست است
-  # برای deploy واقعی از Railway/Render/Fly.io استفاده کنید
+  # This workflow is for testing only
+  # For real deployment, use Railway/Render/Fly.io
   test:
     runs-on: ubuntu-latest
     steps:
@@ -23,6 +23,6 @@ jobs:
       
       - name: Info
         run: |
-          echo "📝 برای deploy واقعی، از Railway.app یا Render.com استفاده کنید"
-          echo "🔗 راهنمای کامل در فایل DEPLOY-FREE.md موجود است"
+          echo "📝 For real deployment, use Railway.app or Render.com"
+          echo "🔗 Full guide is available in DEPLOY-FREE.md file"
 
