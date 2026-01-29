@@ -6,6 +6,8 @@ on:
       - main
       - master
   workflow_dispatch:
+  repository_dispatch:
+    types: [pages-build]
 
 permissions:
   contents: read
