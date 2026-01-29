@@ -234,6 +234,25 @@ async function loadLanguages() {
 }
 // Load Stats
 async function loadStats() {
+    // If no backend configured, compute from static files
+    if (!hasBackendConfigured()) {
+        if (offlineWords) {
+            const translatedCount = offlineWords.filter(w => !!w.translation).length;
+            state.stats = {
+                total_words: offlineWords.length,
+                translated_words: translatedCount,
+                vocab_file_exists: true
+            };
+            const totalWordsEl = document.getElementById('totalWords');
+            const translatedWordsEl = document.getElementById('translatedWords');
+            if (totalWordsEl)
+                totalWordsEl.textContent = state.stats.total_words.toLocaleString();
+            if (translatedWordsEl)
+                translatedWordsEl.textContent = state.stats.translated_words.toLocaleString();
+        }
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/api/stats`);
         const data = await response.json();
