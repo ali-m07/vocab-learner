@@ -25,6 +25,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check if GitHub Pages is enabled
+        id: pages-check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          status="$(curl -sS -o /tmp/pages.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/pages" || true)"
+
+          if [ "${status}" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "✅ GitHub Pages already enabled for this repo."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ GitHub Pages is not enabled (or not accessible)."
+            echo "   API status: ${status}"
+            echo "   One-time fix: Repo Settings → Pages → Source → GitHub Actions"
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -57,6 +79,7 @@ jobs:
         uses: actions/configure-pages@v4
         with:
           enablement: true
+        if: steps.pages-check.outputs.enabled == 'true'
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -71,6 +94,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+        if: steps.pages-check.outputs.enabled == 'true'
           
       - name: Verify build output
         run: |
@@ -88,6 +112,8 @@ jobs:
             echo "❌ index.html not found"
             exit 1
           fi
+          echo ""
+          echo "ℹ️ Pages enabled? ${{ steps.pages-check.outputs.enabled }}"
 
   deploy:
     environment:
@@ -95,6 +121,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
+    if: needs.build.outputs.enabled == 'true'
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
