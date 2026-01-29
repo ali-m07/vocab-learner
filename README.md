@@ -230,8 +230,10 @@ Edit `helm/vocab-learner/values.yaml` to configure:
 - Translation may take several minutes (10,000 words)
 - For better learning, focus on 20-50 words per day deeply
 - Anki manages spaced repetition automatically
-- No API key required (uses free Google Translate)
+- **No API key required** - Uses free Google Translate directly via `googletrans` library
 - Word details are fetched from Free Dictionary API
+- Translation includes automatic retry mechanism and rate limit handling
+- Small delays between requests to respect Google Translate's free tier limits
 
 ## Requirements
 
