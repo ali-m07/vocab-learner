@@ -51,6 +51,8 @@ interface WordsResponse {
     total_pages: number;
 }
 
+type OfflineWordsPayload = { words: string[] };
+
 // State
 class AppState {
     currentPage: number = 1;
@@ -65,6 +67,13 @@ class AppState {
 }
 
 const state = new AppState();
+
+let offlineWords: Word[] | null = null;
+
+function isOfflineMode(): boolean {
+    // If API_BASE is empty and server endpoints are not reachable, we fall back to static words.json
+    return offlineWords !== null;
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -276,6 +285,19 @@ async function loadStats(): Promise<void> {
             translatedWordsEl.textContent = data.translated_words.toLocaleString();
         }
     } catch (error) {
+        // Offline fallback: compute from static list if available
+        if (offlineWords) {
+            state.stats = {
+                total_words: offlineWords.length,
+                translated_words: offlineWords.filter(w => !!w.translation).length,
+                vocab_file_exists: true
+            };
+            const totalWordsEl = document.getElementById('totalWords');
+            const translatedWordsEl = document.getElementById('translatedWords');
+            if (totalWordsEl) totalWordsEl.textContent = state.stats.total_words.toLocaleString();
+            if (translatedWordsEl) translatedWordsEl.textContent = state.stats.translated_words.toLocaleString();
+            return;
+        }
         console.error('Error loading stats:', error);
     }
 }
@@ -313,7 +335,49 @@ async function loadWords(page: number = state.currentPage): Promise<void> {
         renderWords(data.words);
         
     } catch (error) {
-        grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading: ${error instanceof Error ? error.message : 'Unknown error'}</p></div>`;
+        // Offline fallback: load static list and do client-side pagination/search.
+        try {
+            if (!offlineWords) {
+                const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                const payload = (await offlineResp.json()) as OfflineWordsPayload;
+                offlineWords = (payload.words || []).map((w) => ({ word: w }));
+            }
+
+            const q = state.currentSearch.trim().toLowerCase();
+            const t = state.selectedWordType.trim().toLowerCase();
+            let list = offlineWords || [];
+            if (q) {
+                list = list.filter(w =>
+                    w.word.toLowerCase().includes(q) ||
+                    (w.translation || '').toLowerCase().includes(q) ||
+                    (w.definition || '').toLowerCase().includes(q)
+                );
+            }
+            if (t) {
+                list = list.filter(w => (w.word_type || '').toLowerCase() === t);
+            }
+
+            const perPage = 50;
+            const total = list.length;
+            const totalPages = Math.max(1, Math.ceil(total / perPage));
+            const safePage = Math.min(Math.max(1, page), totalPages);
+            const start = (safePage - 1) * perPage;
+            const end = start + perPage;
+            const words = list.slice(start, end);
+
+            state.currentPage = safePage;
+            state.totalPages = totalPages;
+            state.words = words;
+            updatePagination();
+            attachPageNumberListeners();
+            renderWords(words);
+            showToast('Loaded offline word list (no backend). Set a backend URL for translations/examples.', 'success');
+            // Also update stats
+            loadStats();
+            return;
+        } catch (offlineErr) {
+            grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading: ${error instanceof Error ? error.message : 'Unknown error'}</p></div>`;
+        }
     } finally {
         state.isLoading = false;
     }
@@ -338,7 +402,8 @@ function createWordCard(word: Word): string {
                 ${word.pronunciation ? `<div class="word-pronunciation">${escapeHtml(word.pronunciation)}</div>` : ''}
             </div>
             <div class="word-back">
-                <div class="word-translation">${escapeHtml(word.translation || 'No translation')}</div>
+                <div class="word-translation">${escapeHtml(word.translation || (isOfflineMode() ? 'Translation not loaded' : 'No translation'))}</div>
+                ${!word.translation ? `<button class="btn btn-primary btn-translate" data-word="${escapeHtml(word.word)}" onclick="event.stopPropagation(); window.__translateWord?.('${escapeHtml(word.word)}');">Translate</button>` : ''}
                 ${word.word_type ? `<div class="word-type-badge">${escapeHtml(word.word_type)}</div>` : ''}
                 ${word.definition ? `<div class="word-definition">${escapeHtml(word.definition)}</div>` : ''}
                 ${word.examples && word.examples.length > 0 ? `
@@ -351,6 +416,82 @@ function createWordCard(word: Word): string {
         </div>
     `;
 }
+
+async function translateViaLibre(word: string, target: string): Promise<string> {
+    const cacheKey = `tr:${target}:${word.toLowerCase()}`;
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) return cached;
+    } catch { /* noop */ }
+
+    const res = await fetch('https://libretranslate.de/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: word, source: 'en', target, format: 'text' })
+    });
+    if (!res.ok) throw new Error(`Translate failed (${res.status})`);
+    const data = await res.json() as { translatedText?: string };
+    const text = (data.translatedText || '').trim();
+    if (!text) throw new Error('Empty translation');
+    try { localStorage.setItem(cacheKey, text); } catch { /* noop */ }
+    return text;
+}
+
+async function enrichFromDictionary(word: string): Promise<Partial<Word>> {
+    // Free dictionary API for definition/examples (usage)
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if (!res.ok) return {};
+    const data = await res.json() as any[];
+    const entry = data?.[0];
+    const meaning = entry?.meanings?.[0];
+    const def = meaning?.definitions?.[0];
+    const examples: string[] = [];
+    for (const d of (meaning?.definitions || []).slice(0, 3)) {
+        if (d?.example) examples.push(String(d.example));
+    }
+    return {
+        pronunciation: entry?.phonetics?.[0]?.text || '',
+        word_type: meaning?.partOfSpeech || '',
+        definition: def?.definition || '',
+        examples: examples.slice(0, 2),
+    };
+}
+
+// Expose a global helper used by the inline onclick in the card template.
+(window as any).__translateWord = async (w: string) => {
+    try {
+        const target = state.selectedLanguage || 'en';
+        if (target === 'en') {
+            showToast('Select a target language first.', 'error');
+            return;
+        }
+        const translated = await translateViaLibre(w, target);
+        // Update in-memory lists
+        const applyTo = (arr: Word[] | null) => {
+            if (!arr) return;
+            const item = arr.find(x => x.word.toLowerCase() === w.toLowerCase());
+            if (item) item.translation = translated;
+        };
+        applyTo(state.words);
+        applyTo(offlineWords);
+
+        // Also fetch definition/examples for usage
+        const extra = await enrichFromDictionary(w);
+        const applyExtra = (arr: Word[] | null) => {
+            if (!arr) return;
+            const item = arr.find(x => x.word.toLowerCase() === w.toLowerCase());
+            if (item) Object.assign(item, extra);
+        };
+        applyExtra(state.words);
+        applyExtra(offlineWords);
+
+        renderWords(state.words);
+        loadStats();
+        showToast('Translated and enriched.', 'success');
+    } catch (e) {
+        showToast(`Translation failed: ${e instanceof Error ? e.message : 'Unknown error'}`, 'error');
+    }
+};
 
 // Escape HTML
 function escapeHtml(text: string): string {
