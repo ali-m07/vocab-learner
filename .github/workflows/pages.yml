@@ -100,9 +100,12 @@ jobs:
       - name: Build static site
         run: |
           python3 build_static.py
-          # Also copy static files to root for GitHub Pages (if serving from root)
-          mkdir -p static
-          cp -r frontend/static/* static/ || true
+          # Verify _site has static files
+          echo "📁 Checking _site structure:"
+          ls -la _site/ || echo "❌ _site not found"
+          ls -la _site/static/ || echo "❌ _site/static not found"
+          ls -la _site/static/css/ || echo "❌ _site/static/css not found"
+          ls -la _site/static/js/ || echo "❌ _site/static/js not found"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
