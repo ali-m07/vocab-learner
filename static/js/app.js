@@ -1,13 +1,37 @@
 "use strict";
-// API Base URL
-const API_BASE = '';
+function getApiBase() {
+    // 1) Query param override: ?api=https://your-backend.example.com
+    // 2) localStorage override (persisted)
+    // 3) default: same origin (empty string)
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const qp = (params.get('api') || '').trim();
+        if (qp)
+            return qp.replace(/\/+$/, '');
+    }
+    catch { /* noop */ }
+    try {
+        const stored = (localStorage.getItem('apiBase') || '').trim();
+        if (stored)
+            return stored.replace(/\/+$/, '');
+    }
+    catch { /* noop */ }
+    return '';
+}
+// API Base URL (dynamic)
+let API_BASE = getApiBase();
+function guessLanguageCode() {
+    const navLang = (navigator.language || '').toLowerCase(); // e.g. "fr-fr"
+    const code = navLang.split('-')[0] || '';
+    return code || 'en';
+}
 // State
 class AppState {
     constructor() {
         this.currentPage = 1;
         this.totalPages = 1;
         this.currentSearch = '';
-        this.selectedLanguage = 'fa';
+        this.selectedLanguage = guessLanguageCode();
         this.selectedWordType = '';
         this.words = [];
         this.stats = { total_words: 0, translated_words: 0, vocab_file_exists: false };
@@ -16,12 +40,34 @@ class AppState {
     }
 }
 const state = new AppState();
+let offlineWords = null;
+function isOfflineMode() {
+    // If API_BASE is empty and server endpoints are not reachable, we fall back to static words.json
+    return offlineWords !== null;
+}
+function hasBackendConfigured() {
+    return !!API_BASE;
+}
+function updateBackendUiVisibility() {
+    const downloadBtn = document.getElementById('downloadBtn');
+    const createAnkiBtn = document.getElementById('createAnkiBtn');
+    const dailyReviewBtn = document.getElementById('dailyReviewBtn');
+    const show = hasBackendConfigured();
+    // On free/offline mode (Pages), hide backend-only features.
+    if (downloadBtn)
+        downloadBtn.style.display = show ? '' : 'none';
+    if (createAnkiBtn)
+        createAnkiBtn.style.display = show ? '' : 'none';
+    if (dailyReviewBtn)
+        dailyReviewBtn.style.display = show ? '' : 'none';
+}
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLanguages();
     loadStats();
     loadWords();
     setupEventListeners();
+    updateBackendUiVisibility();
 });
 // Event Listeners
 function setupEventListeners() {
@@ -139,11 +185,41 @@ function setupEventListeners() {
 }
 // Load Languages
 async function loadLanguages() {
+    // Offline/Pages mode: do not call backend, just use a small built-in list.
+    if (!hasBackendConfigured()) {
+        state.languages = {
+            en: 'English',
+            es: 'Spanish',
+            fr: 'French',
+            de: 'German',
+            it: 'Italian',
+            pt: 'Portuguese',
+            ru: 'Russian',
+            ar: 'Arabic',
+            tr: 'Turkish',
+            hi: 'Hindi',
+            fa: 'Persian',
+            ja: 'Japanese',
+            ko: 'Korean',
+            zh: 'Chinese',
+        };
+        const browserLang = guessLanguageCode();
+        state.selectedLanguage = state.languages[browserLang] ? browserLang : 'en';
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+            languageSelect.innerHTML = Object.entries(state.languages)
+                .map(([code, name]) => `<option value="${code}" ${code === state.selectedLanguage ? 'selected' : ''}>${name}</option>`)
+                .join('');
+        }
+        return;
+    }
     try {
         const response = await fetch(`${API_BASE}/api/languages`);
         const data = await response.json();
         state.languages = data.languages;
-        state.selectedLanguage = data.default || 'fa';
+        // Prefer browser language when supported, otherwise server default, otherwise English.
+        const browserLang = guessLanguageCode();
+        state.selectedLanguage = state.languages?.[browserLang] ? browserLang : (data.default || 'en');
         // Populate language select
         const languageSelect = document.getElementById('languageSelect');
         if (languageSelect) {
@@ -172,6 +248,22 @@ async function loadStats() {
         }
     }
     catch (error) {
+        // Offline fallback: compute from static list if available
+        if (offlineWords) {
+            const translatedCount = offlineWords.filter(w => !!w.translation).length;
+            state.stats = {
+                total_words: offlineWords.length,
+                translated_words: translatedCount,
+                vocab_file_exists: true
+            };
+            const totalWordsEl = document.getElementById('totalWords');
+            const translatedWordsEl = document.getElementById('translatedWords');
+            if (totalWordsEl)
+                totalWordsEl.textContent = state.stats.total_words.toLocaleString();
+            if (translatedWordsEl)
+                translatedWordsEl.textContent = state.stats.translated_words.toLocaleString();
+            return;
+        }
         console.error('Error loading stats:', error);
     }
 }
@@ -203,7 +295,85 @@ async function loadWords(page = state.currentPage) {
         renderWords(data.words);
     }
     catch (error) {
-        grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading: ${error instanceof Error ? error.message : 'Unknown error'}</p></div>`;
+        // Offline fallback: load static list with pre-translated data
+        try {
+            if (!offlineWords) {
+                // Try to load pre-translated words first
+                let translatedResp = null;
+                try {
+                    translatedResp = await fetch('static/data/words_translated.json', { cache: 'no-cache' });
+                }
+                catch { /* ignore */ }
+                if (translatedResp && translatedResp.ok) {
+                    const translatedData = await translatedResp.json();
+                    const lang = state.selectedLanguage || guessLanguageCode();
+                    const preTranslated = (translatedData.words || []).map((w) => ({
+                        word: w.word || '',
+                        translation: w.translations?.[lang] || '',
+                        definition: w.definition || '',
+                        word_type: w.word_type || '',
+                        examples: w.examples || [],
+                        pronunciation: w.pronunciation || '',
+                    }));
+                    // Load remaining words from plain list and merge
+                    try {
+                        const plainResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                        const plainData = (await plainResp.json());
+                        const plainWords = (plainData.words || []).map((w) => ({ word: w }));
+                        // Create a map of pre-translated words
+                        const translatedMap = new Map(preTranslated.map(w => [w.word.toLowerCase(), w]));
+                        // Merge: use pre-translated if available, otherwise plain
+                        offlineWords = plainWords.map(w => {
+                            const translated = translatedMap.get(w.word.toLowerCase());
+                            return translated || w;
+                        });
+                    }
+                    catch {
+                        offlineWords = preTranslated;
+                    }
+                }
+                else {
+                    // Fallback to plain word list
+                    const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                    const payload = (await offlineResp.json());
+                    offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                }
+            }
+            const q = state.currentSearch.trim().toLowerCase();
+            const t = state.selectedWordType.trim().toLowerCase();
+            let list = offlineWords || [];
+            if (q) {
+                list = list.filter(w => w.word.toLowerCase().includes(q) ||
+                    (w.translation || '').toLowerCase().includes(q) ||
+                    (w.definition || '').toLowerCase().includes(q));
+            }
+            if (t) {
+                list = list.filter(w => (w.word_type || '').toLowerCase() === t);
+            }
+            const perPage = 50;
+            const total = list.length;
+            const totalPages = Math.max(1, Math.ceil(total / perPage));
+            const safePage = Math.min(Math.max(1, page), totalPages);
+            const start = (safePage - 1) * perPage;
+            const end = start + perPage;
+            const words = list.slice(start, end);
+            state.currentPage = safePage;
+            state.totalPages = totalPages;
+            state.words = words;
+            updatePagination();
+            attachPageNumberListeners();
+            renderWords(words);
+            const hasTranslations = words.some(w => !!w.translation);
+            showToast(hasTranslations
+                ? `Loaded ${words.length} words with translations`
+                : 'Words loaded successfully.', 'success');
+            // Also update stats
+            loadStats();
+            return;
+        }
+        catch (offlineErr) {
+            grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading: ${error instanceof Error ? error.message : 'Unknown error'}</p></div>`;
+        }
     }
     finally {
         state.isLoading = false;
@@ -226,7 +396,8 @@ function createWordCard(word) {
                 ${word.pronunciation ? `<div class="word-pronunciation">${escapeHtml(word.pronunciation)}</div>` : ''}
             </div>
             <div class="word-back">
-                <div class="word-translation">${escapeHtml(word.translation || 'No translation')}</div>
+                <div class="word-translation">${escapeHtml(word.translation || 'Click Translate')}</div>
+                ${!word.translation ? `<button class="btn btn-primary btn-translate" data-word="${escapeHtml(word.word)}" onclick="event.stopPropagation(); window.__translateWord?.('${escapeHtml(word.word)}');">Translate</button>` : ''}
                 ${word.word_type ? `<div class="word-type-badge">${escapeHtml(word.word_type)}</div>` : ''}
                 ${word.definition ? `<div class="word-definition">${escapeHtml(word.definition)}</div>` : ''}
                 ${word.examples && word.examples.length > 0 ? `
@@ -239,6 +410,121 @@ function createWordCard(word) {
         </div>
     `;
 }
+async function translateViaLibre(word, target) {
+    const cacheKey = `tr:${target}:${word.toLowerCase()}`;
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached)
+            return cached;
+    }
+    catch { /* noop */ }
+    // Try multiple free translation endpoints
+    const endpoints = [
+        { url: 'https://translate.argosopentech.com/translate', method: 'POST' },
+        { url: 'https://libretranslate.de/translate', method: 'POST' },
+    ];
+    for (const endpoint of endpoints) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const res = await fetch(endpoint.url, {
+                method: endpoint.method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q: word, source: 'en', target, format: 'text' }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+                const text = await res.text();
+                try {
+                    const data = JSON.parse(text);
+                    const translated = (data.translatedText || '').trim();
+                    if (translated) {
+                        try {
+                            localStorage.setItem(cacheKey, translated);
+                        }
+                        catch { /* noop */ }
+                        return translated;
+                    }
+                }
+                catch {
+                    // If not JSON, might be plain text
+                    if (text.trim()) {
+                        try {
+                            localStorage.setItem(cacheKey, text.trim());
+                        }
+                        catch { /* noop */ }
+                        return text.trim();
+                    }
+                }
+            }
+        }
+        catch (e) {
+            // Try next endpoint
+            continue;
+        }
+    }
+    throw new Error('Translation service unavailable. Try again later.');
+}
+async function enrichFromDictionary(word) {
+    // Free dictionary API for definition/examples (usage)
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if (!res.ok)
+        return {};
+    const data = await res.json();
+    const entry = data?.[0];
+    const meaning = entry?.meanings?.[0];
+    const def = meaning?.definitions?.[0];
+    const examples = [];
+    for (const d of (meaning?.definitions || []).slice(0, 3)) {
+        if (d?.example)
+            examples.push(String(d.example));
+    }
+    return {
+        pronunciation: entry?.phonetics?.[0]?.text || '',
+        word_type: meaning?.partOfSpeech || '',
+        definition: def?.definition || '',
+        examples: examples.slice(0, 2),
+    };
+}
+// Expose a global helper used by the inline onclick in the card template.
+window.__translateWord = async (w) => {
+    try {
+        const target = state.selectedLanguage || 'en';
+        if (target === 'en') {
+            showToast('Select a target language first.', 'error');
+            return;
+        }
+        const translated = await translateViaLibre(w, target);
+        // Update in-memory lists
+        const applyTo = (arr) => {
+            if (!arr)
+                return;
+            const item = arr.find(x => x.word.toLowerCase() === w.toLowerCase());
+            if (item)
+                item.translation = translated;
+        };
+        applyTo(state.words);
+        applyTo(offlineWords);
+        // Also fetch definition/examples for usage
+        const extra = await enrichFromDictionary(w);
+        const applyExtra = (arr) => {
+            if (!arr)
+                return;
+            const item = arr.find(x => x.word.toLowerCase() === w.toLowerCase());
+            if (item)
+                Object.assign(item, extra);
+        };
+        applyExtra(state.words);
+        applyExtra(offlineWords);
+        renderWords(state.words);
+        loadStats();
+        showToast('Translated and enriched.', 'success');
+    }
+    catch (e) {
+        showToast(`Translation failed: ${e instanceof Error ? e.message : 'Unknown error'}`, 'error');
+    }
+};
 // Escape HTML
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -359,6 +645,10 @@ async function handleDownload() {
     const btn = document.getElementById('downloadBtn');
     if (!btn)
         return;
+    if (!hasBackendConfigured()) {
+        showToast('Offline mode: connect a backend URL to download/translate the dataset.', 'error');
+        return;
+    }
     const originalText = btn.innerHTML;
     const includeDetails = document.getElementById('includeDetails')?.checked ?? true;
     btn.disabled = true;
@@ -374,12 +664,6 @@ async function handleDownload() {
                 include_details: includeDetails
             })
         });
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await response.text();
-            throw new Error(`Server returned HTML instead of JSON. Make sure Flask server is running. Status: ${response.status}`);
-        }
         const data = await response.json();
         if (data.success) {
             showToast(data.message, 'success');
@@ -387,23 +671,7 @@ async function handleDownload() {
             setTimeout(() => loadWords(), 1000);
         }
         else {
-            let errorMsg = data.error || 'Download error';
-            // Provide helpful messages for common errors
-            if (errorMsg.includes('rate limit') || errorMsg.includes('429')) {
-                errorMsg = 'Translation service rate limit exceeded. Please wait 5-10 minutes and try again.';
-            }
-            else if (errorMsg.includes('service unavailable') || errorMsg.includes('503') || errorMsg.includes('502')) {
-                errorMsg = 'Translation service is temporarily unavailable. Please try again in a few minutes.';
-            }
-            else if (errorMsg.includes('partially completed')) {
-                errorMsg = errorMsg + ' Some words were translated successfully.';
-            }
-            showToast(errorMsg, 'error');
-            // If partial success, reload stats and words
-            if (data.partial_success) {
-                loadStats();
-                setTimeout(() => loadWords(), 1000);
-            }
+            showToast(data.error || 'Download error', 'error');
         }
     }
     catch (error) {
@@ -419,6 +687,10 @@ async function handleCreateAnki() {
     const btn = document.getElementById('createAnkiBtn');
     if (!btn)
         return;
+    if (!hasBackendConfigured()) {
+        showToast('Offline mode: connect a backend URL to create Anki decks.', 'error');
+        return;
+    }
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-icon">⏳</span> Creating...';
@@ -456,6 +728,10 @@ async function loadDailyWords() {
     const container = document.getElementById('dailyWords');
     if (!container)
         return;
+    if (!hasBackendConfigured()) {
+        container.innerHTML = `<p style="color: var(--text-secondary);">Offline mode: connect a backend URL to use Daily Review.</p>`;
+        return;
+    }
     const countInput = document.getElementById('dailyCount');
     const count = parseInt(countInput?.value || '50', 10);
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
