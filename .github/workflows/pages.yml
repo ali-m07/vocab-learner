@@ -112,6 +112,15 @@ jobs:
         with:
           path: _site
         if: steps.pages-check.outputs.enabled == 'true'
+        
+      - name: Debug artifact contents
+        if: steps.pages-check.outputs.enabled == 'true'
+        run: |
+          echo "📦 Artifact directory structure:"
+          find _site -type f -name "*.css" -o -name "*.js" -o -name "*.json" | head -20
+          echo ""
+          echo "📄 index.html references:"
+          grep -E "href=|src=" _site/index.html | grep -E "css|js" | head -5
           
       - name: Verify build output
         run: |
