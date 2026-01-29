@@ -4,7 +4,7 @@
       "word": "the",
       "translations": {},
       "pronunciation": "/ði/",
-      "word_type": "adverb",
+      "word_type": "verb",
       "definition": "With a comparative or with more and a verb phrase, establishes a correlation with one or more other such comparatives.",
       "examples": [
         "It looks weaker and weaker, the more I think about it.",
@@ -15,7 +15,7 @@
       "word": "to",
       "translations": {},
       "pronunciation": "/tʉː/",
-      "word_type": "adverb",
+      "word_type": "preposition",
       "definition": "Toward a closed, touching or engaging position.",
       "examples": [
         "Please push the door to."
@@ -25,7 +25,7 @@
       "word": "and",
       "translations": {},
       "pronunciation": "",
-      "word_type": "noun",
+      "word_type": "conjunction",
       "definition": "In rhythm, the second half of a divided beat.",
       "examples": []
     },
@@ -41,7 +41,7 @@
       "word": "a",
       "translations": {},
       "pronunciation": "/æɪ/",
-      "word_type": "noun",
+      "word_type": "preposition",
       "definition": "The name of the Latin script letter A/a.",
       "examples": []
     },
@@ -49,7 +49,7 @@
       "word": "in",
       "translations": {},
       "pronunciation": "/ɪn/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "A position of power or influence, or a way to get it.",
       "examples": [
         "His parents got him an in with the company."
@@ -59,7 +59,7 @@
       "word": "i",
       "translations": {},
       "pronunciation": "",
-      "word_type": "noun",
+      "word_type": "object.",
       "definition": "The name of the Latin-script letter I.",
       "examples": [
         "the position of an i-dot (the dot of an i)"
@@ -67,17 +67,19 @@
     },
     {
       "word": "is",
-      "translations": {}
+      "translations": {},
+      "word_type": "verb"
     },
     {
       "word": "for",
-      "translations": {}
+      "translations": {},
+      "word_type": "noun"
     },
     {
       "word": "that",
       "translations": {},
       "pronunciation": "/ˈðæt/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "Something being indicated that is there; one of those.",
       "examples": []
     },
@@ -85,7 +87,7 @@
       "word": "you",
       "translations": {},
       "pronunciation": "/jʉː/",
-      "word_type": "verb",
+      "word_type": "pronoun",
       "definition": "To address (a person) using the pronoun you (in the past, especially to use you rather than thou, when you was considered more formal).",
       "examples": []
     },
@@ -93,7 +95,7 @@
       "word": "it",
       "translations": {},
       "pronunciation": "/ɪt/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "One who is neither a he nor a she; a creature; a dehumanized being.",
       "examples": [
         "In the next game, Adam and Tom will be it…"
@@ -103,7 +105,7 @@
       "word": "on",
       "translations": {},
       "pronunciation": "/ɒn/",
-      "word_type": "verb",
+      "word_type": "preposition",
       "definition": "To switch on",
       "examples": [
         "Can you on the light?"
@@ -111,29 +113,32 @@
     },
     {
       "word": "with",
-      "translations": {}
+      "translations": {},
+      "word_type": "noun"
     },
     {
       "word": "this",
       "translations": {},
       "pronunciation": "/ðəs/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "Something being indicated that is here; one of these.",
       "examples": []
     },
     {
       "word": "was",
-      "translations": {}
+      "translations": {},
+      "word_type": "verb"
     },
     {
       "word": "be",
-      "translations": {}
+      "translations": {},
+      "word_type": "verb"
     },
     {
       "word": "as",
       "translations": {},
       "pronunciation": "",
-      "word_type": "adverb",
+      "word_type": "verb",
       "definition": "To such an extent or degree; to the same extent or degree.",
       "examples": [
         "It's not as well made, but it's twice as expensive.",
@@ -152,7 +157,7 @@
       "word": "have",
       "translations": {},
       "pronunciation": "",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "A wealthy or privileged person.",
       "examples": []
     },
@@ -160,7 +165,7 @@
       "word": "at",
       "translations": {},
       "pronunciation": "",
-      "word_type": "verb",
+      "word_type": "preposition",
       "definition": "To reply to or talk to someone, either online or face-to-face. (from the practice of targeting a message or reply to someone online by writing @name)",
       "examples": [
         "Cars 2 is the most influential film of all time. Don't @ me."
@@ -170,7 +175,7 @@
       "word": "he",
       "translations": {},
       "pronunciation": "",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "The game of tag, or it, in which the player attempting to catch the others is called \"he\".",
       "examples": []
     },
@@ -178,7 +183,7 @@
       "word": "not",
       "translations": {},
       "pronunciation": "/nɒt/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "A unary operation on logical values that changes true to false, and false to true.",
       "examples": []
     },
@@ -186,7 +191,7 @@
       "word": "by",
       "translations": {},
       "pronunciation": "/baɪ/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "A flying insect, of the clade Anthophila within the hymenopteran superfamily Apoidea, known for its organised societies (though only a minority have them), for collecting pollen and (in some species) producing wax and honey.",
       "examples": []
     },
@@ -194,7 +199,7 @@
       "word": "but",
       "translations": {},
       "pronunciation": "",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "An instance or example of using the word \"but\".",
       "examples": [
         "It has to be done – no ifs or buts."
@@ -215,7 +220,7 @@
       "word": "my",
       "translations": {},
       "pronunciation": "/mi/",
-      "word_type": "interjection",
+      "word_type": "adjective",
       "definition": "Used to express surprise, shock or amazement.",
       "examples": [
         "My, what big teeth you have!"
@@ -225,7 +230,7 @@
       "word": "or",
       "translations": {},
       "pronunciation": "/ɔː(ɹ)/",
-      "word_type": "conjunction",
+      "word_type": "verb",
       "definition": "Connects at least two alternative words, phrases, clauses, sentences, etc. each of which could make a passage true. In English, this is the \"inclusive or.\" The \"exclusive or\" is formed by \"either [...] or\".",
       "examples": [
         "He might get cancer, or be hit by a bus, or God knows what."
@@ -243,19 +248,20 @@
       "word": "an",
       "translations": {},
       "pronunciation": "/æn/",
-      "word_type": "numeral",
+      "word_type": "conjunction",
       "definition": "One",
       "examples": []
     },
     {
       "word": "your",
-      "translations": {}
+      "translations": {},
+      "word_type": "pronoun"
     },
     {
       "word": "all",
       "translations": {},
       "pronunciation": "/ɔːl/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "(with a possessive pronoun) Everything that one is capable of.",
       "examples": [
         "She gave her all, and collapsed at the finish line."
@@ -265,7 +271,7 @@
       "word": "so",
       "translations": {},
       "pronunciation": "/səʊ/",
-      "word_type": "adjective",
+      "word_type": "verb",
       "definition": "True, accurate.",
       "examples": [
         "That is so.  You are responsible for this, is that not so?"
@@ -304,7 +310,7 @@
       "word": "if",
       "translations": {},
       "pronunciation": "/ɪf/",
-      "word_type": "noun",
+      "word_type": "conjunction",
       "definition": "An uncertainty, possibility, condition, doubt etc.",
       "examples": []
     },
@@ -312,7 +318,7 @@
       "word": "one",
       "translations": {},
       "pronunciation": "/wan/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "The digit or figure 1.",
       "examples": []
     },
@@ -320,7 +326,7 @@
       "word": "can",
       "translations": {},
       "pronunciation": "/ˈkæn/",
-      "word_type": "verb",
+      "word_type": "noun",
       "definition": "(auxiliary verb, defective) To know how to; to be able to.",
       "examples": [
         "She can speak English, French, and German.   I can play football.   Can you remember your fifth birthday?",
@@ -361,7 +367,7 @@
       "word": "about",
       "translations": {},
       "pronunciation": "/əˈbɛʊt/",
-      "word_type": "adjective",
+      "word_type": "verb",
       "definition": "Moving around; astir.",
       "examples": [
         "After my bout with Guillan-Barre Syndrome, it took me 6 months to be up and about again.",
@@ -372,7 +378,7 @@
       "word": "up",
       "translations": {},
       "pronunciation": "/ap/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "The direction opposed to the pull of gravity.",
       "examples": [
         "Up is a good way to go.",
@@ -383,7 +389,7 @@
       "word": "out",
       "translations": {},
       "pronunciation": "/æɔt/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "A means of exit, escape, reprieve, etc.",
       "examples": [
         "They wrote the law to give those organizations an out."
@@ -393,7 +399,7 @@
       "word": "what",
       "translations": {},
       "pronunciation": "/wɔt/",
-      "word_type": "adverb",
+      "word_type": "pronoun",
       "definition": "(Singlish) Used to contradict an underlying assumption held by the interlocutor.",
       "examples": []
     },
@@ -412,7 +418,7 @@
       "word": "when",
       "translations": {},
       "pronunciation": "/ʍɛn/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "The time at which something happens.",
       "examples": [
         "A good article will cover the who, the what, the when, the where, the why and the how."
@@ -422,7 +428,7 @@
       "word": "more",
       "translations": {},
       "pronunciation": "/ˈmɔː/",
-      "word_type": "adverb",
+      "word_type": "noun",
       "definition": "To a greater degree or extent.",
       "examples": [
         "I could no more climb that than fly!",
@@ -444,7 +450,7 @@
       "word": "no",
       "translations": {},
       "pronunciation": "/nəʊ/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "A negating expression; an answer that shows disagreement or disapproval",
       "examples": [
         "The workers voted on whether to strike, and there were thirty \"yeses\" and two \"nos\"."
@@ -452,13 +458,14 @@
     },
     {
       "word": "were",
-      "translations": {}
+      "translations": {},
+      "word_type": "verb"
     },
     {
       "word": "who",
       "translations": {},
       "pronunciation": "/huː/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "A person under discussion; a question of which person.",
       "examples": []
     },
@@ -466,7 +473,7 @@
       "word": "had",
       "translations": {},
       "pronunciation": "",
-      "word_type": "verb",
+      "word_type": "imp. & p. p.",
       "definition": "To possess, own.",
       "examples": [
         "I have a house and a car.",
@@ -479,13 +486,14 @@
     },
     {
       "word": "their",
-      "translations": {}
+      "translations": {},
+      "word_type": "pronoun"
     },
     {
       "word": "there",
       "translations": {},
       "pronunciation": "/ðeː(ɹ)/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "That place.",
       "examples": [
         "You rinse and de-string the green beans; I'll take it from there."
@@ -495,7 +503,7 @@
       "word": "her",
       "translations": {},
       "pronunciation": "/ə(ɹ)/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "A female person or animal.",
       "examples": [
         "I think this bird is a him, but it may be a her."
@@ -505,7 +513,7 @@
       "word": "which",
       "translations": {},
       "pronunciation": "/wɪt͡ʃ/",
-      "word_type": "pronoun",
+      "word_type": "adjective",
       "definition": "(interrogative) What one or ones (of those mentioned or implied).",
       "examples": [
         "By now, you must surely know which is which.",
@@ -534,7 +542,7 @@
       "word": "been",
       "translations": {},
       "pronunciation": "/biːn/",
-      "word_type": "noun",
+      "word_type": "p. p.",
       "definition": "A flying insect, of the clade Anthophila within the hymenopteran superfamily Apoidea, known for its organised societies (though only a minority have them), for collecting pollen and (in some species) producing wax and honey.",
       "examples": []
     },
@@ -542,7 +550,7 @@
       "word": "would",
       "translations": {},
       "pronunciation": "/wʊd/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "Something that would happen, or would be the case, under different circumstances; a potentiality.",
       "examples": []
     },
@@ -550,7 +558,7 @@
       "word": "she",
       "translations": {},
       "pronunciation": "/ʃiː/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "A female.",
       "examples": [
         "Pat is definitely a she."
@@ -560,7 +568,7 @@
       "word": "new",
       "translations": {},
       "pronunciation": "/njʉː/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "Things that are new.",
       "examples": [
         "Out with the old, in with the new."
@@ -580,7 +588,7 @@
       "word": "how",
       "translations": {},
       "pronunciation": "/hæŏ/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "The means by which something is accomplished.",
       "examples": [
         "I am not interested in the why, but in the how."
@@ -598,7 +606,7 @@
       "word": "some",
       "translations": {},
       "pronunciation": "/sɐm/",
-      "word_type": "adverb",
+      "word_type": "adjective",
       "definition": "Of a measurement: approximately, roughly.",
       "examples": [
         "I guess he must have weighed some 90 kilos."
@@ -608,7 +616,7 @@
       "word": "also",
       "translations": {},
       "pronunciation": "/ˈɔːl.səʊ/",
-      "word_type": "adverb",
+      "word_type": "verb",
       "definition": "(focus) In addition; besides; as well; further; too.",
       "examples": [
         "They had porridge for breakfast, and also toast."
@@ -626,7 +634,7 @@
       "word": "now",
       "translations": {},
       "pronunciation": "/naʊ/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "The present time.",
       "examples": [
         "Now is the right time.",
@@ -637,7 +645,7 @@
       "word": "other",
       "translations": {},
       "pronunciation": "/ˈɐðə/",
-      "word_type": "noun",
+      "word_type": "pronoun",
       "definition": "An other, another (person, etc), more often rendered as another.",
       "examples": [
         "I'm afraid little Robbie does not always play well with others.",
@@ -660,13 +668,14 @@
     },
     {
       "word": "our",
-      "translations": {}
+      "translations": {},
+      "word_type": "pronoun"
     },
     {
       "word": "than",
       "translations": {},
       "pronunciation": "",
-      "word_type": "adverb",
+      "word_type": "verb",
       "definition": "At that time; then.",
       "examples": []
     },
@@ -674,7 +683,7 @@
       "word": "good",
       "translations": {},
       "pronunciation": "/ɡʊ(d)/",
-      "word_type": "adjective",
+      "word_type": "noun",
       "definition": "(of people)",
       "examples": []
     },
@@ -682,7 +691,7 @@
       "word": "only",
       "translations": {},
       "pronunciation": "/ˈəʊn.li/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "An only child.",
       "examples": []
     },
@@ -700,7 +709,7 @@
       "word": "first",
       "translations": {},
       "pronunciation": "/fɪrst/",
-      "word_type": "noun",
+      "word_type": "adjective",
       "definition": "The person or thing in the first position.",
       "examples": [
         "He was the first to complete the course."
@@ -737,7 +746,7 @@
       "word": "see",
       "translations": {},
       "pronunciation": "/siː/",
-      "word_type": "verb",
+      "word_type": "noun",
       "definition": "(stative) To perceive or detect with the eyes, or as if by sight.",
       "examples": []
     },
@@ -765,7 +774,7 @@
       "word": "over",
       "translations": {},
       "pronunciation": "",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "A set of six legal balls bowled.",
       "examples": []
     },
@@ -773,7 +782,7 @@
       "word": "think",
       "translations": {},
       "pronunciation": "/θɪŋk/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "An act of thinking; consideration (of something).",
       "examples": [
         "I'll have a think about that and let you know."
@@ -783,7 +792,7 @@
       "word": "any",
       "translations": {},
       "pronunciation": "/ˈæni/",
-      "word_type": "adverb",
+      "word_type": "pronoun",
       "definition": "To even the slightest extent, at all.",
       "examples": [
         "I will not remain here any longer."
@@ -793,7 +802,7 @@
       "word": "then",
       "translations": {},
       "pronunciation": "/ðen/",
-      "word_type": "conjunction",
+      "word_type": "verb",
       "definition": "Used in comparisons, to introduce the basis of comparison.",
       "examples": [
         "she's taller than I am;  she found his advice more witty than helpful;  we have less work today than we had yesterday;  We had no choice than to return home"
@@ -803,7 +812,7 @@
       "word": "could",
       "translations": {},
       "pronunciation": "",
-      "word_type": "verb",
+      "word_type": "imp.",
       "definition": "(auxiliary verb, defective) To know how to; to be able to.",
       "examples": [
         "She can speak English, French, and German.   I can play football.   Can you remember your fifth birthday?",
@@ -845,7 +854,7 @@
       "word": "want",
       "translations": {},
       "pronunciation": "/wɔnt/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "A desire, wish, longing.",
       "examples": []
     },
@@ -853,7 +862,7 @@
       "word": "because",
       "translations": {},
       "pronunciation": "/bɪˈkɒz/",
-      "word_type": "adverb",
+      "word_type": "conjunction",
       "definition": "For the reason (that).",
       "examples": [
         "My life is ruined because of you!"
@@ -863,7 +872,7 @@
       "word": "go",
       "translations": {},
       "pronunciation": "/ɡəʉ/",
-      "word_type": "noun",
+      "word_type": "verb",
       "definition": "The act of going.",
       "examples": [
         "It’s your go."
@@ -873,7 +882,7 @@
       "word": "well",
       "translations": {},
       "pronunciation": "/wɛl/",
-      "word_type": "adjective",
+      "word_type": "verb",
       "definition": "In good health.",
       "examples": [
         "I had been sick, but now I'm well.",
