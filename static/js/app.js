@@ -70,8 +70,18 @@ function setupEventListeners() {
         });
     }
     // Pagination
+    const firstPage = document.getElementById('firstPage');
     const prevPage = document.getElementById('prevPage');
     const nextPage = document.getElementById('nextPage');
+    const lastPage = document.getElementById('lastPage');
+    if (firstPage) {
+        firstPage.addEventListener('click', () => {
+            if (state.currentPage > 1) {
+                state.currentPage = 1;
+                loadWords();
+            }
+        });
+    }
     if (prevPage) {
         prevPage.addEventListener('click', () => {
             if (state.currentPage > 1) {
@@ -84,6 +94,14 @@ function setupEventListeners() {
         nextPage.addEventListener('click', () => {
             if (state.currentPage < state.totalPages) {
                 state.currentPage++;
+                loadWords();
+            }
+        });
+    }
+    if (lastPage) {
+        lastPage.addEventListener('click', () => {
+            if (state.currentPage < state.totalPages) {
+                state.currentPage = state.totalPages;
                 loadWords();
             }
         });
@@ -181,6 +199,7 @@ async function loadWords(page = state.currentPage) {
         state.totalPages = data.total_pages;
         state.words = data.words;
         updatePagination();
+        attachPageNumberListeners();
         renderWords(data.words);
     }
     catch (error) {
@@ -229,16 +248,95 @@ function escapeHtml(text) {
 // Update Pagination
 function updatePagination() {
     const pageInfo = document.getElementById('pageInfo');
+    const pageNumbers = document.getElementById('pageNumbers');
+    const firstPage = document.getElementById('firstPage');
     const prevPage = document.getElementById('prevPage');
     const nextPage = document.getElementById('nextPage');
+    const lastPage = document.getElementById('lastPage');
     if (pageInfo) {
         pageInfo.textContent = `Page ${state.currentPage} of ${state.totalPages}`;
+    }
+    // Update button states
+    if (firstPage) {
+        firstPage.disabled = state.currentPage === 1;
     }
     if (prevPage) {
         prevPage.disabled = state.currentPage === 1;
     }
     if (nextPage) {
         nextPage.disabled = state.currentPage === state.totalPages;
+    }
+    if (lastPage) {
+        lastPage.disabled = state.currentPage === state.totalPages;
+    }
+    // Generate page numbers
+    if (pageNumbers) {
+        pageNumbers.innerHTML = generatePageNumbers();
+    }
+}
+// Generate page number buttons
+function generatePageNumbers() {
+    const totalPages = state.totalPages;
+    const currentPage = state.currentPage;
+    const pages = [];
+    if (totalPages <= 7) {
+        // Show all pages if 7 or fewer
+        for (let i = 1; i <= totalPages; i++) {
+            pages.push(createPageButton(i, i === currentPage));
+        }
+    }
+    else {
+        // Show first page
+        pages.push(createPageButton(1, currentPage === 1));
+        if (currentPage <= 3) {
+            // Show pages 2, 3, 4
+            for (let i = 2; i <= 4; i++) {
+                pages.push(createPageButton(i, i === currentPage));
+            }
+            pages.push(createPageButton('...', false, true));
+            pages.push(createPageButton(totalPages, false));
+        }
+        else if (currentPage >= totalPages - 2) {
+            // Show last pages
+            pages.push(createPageButton('...', false, true));
+            for (let i = totalPages - 3; i <= totalPages; i++) {
+                pages.push(createPageButton(i, i === currentPage));
+            }
+        }
+        else {
+            // Show middle pages
+            pages.push(createPageButton('...', false, true));
+            for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                pages.push(createPageButton(i, i === currentPage));
+            }
+            pages.push(createPageButton('...', false, true));
+            pages.push(createPageButton(totalPages, false));
+        }
+    }
+    return pages.join('');
+}
+// Create page button HTML
+function createPageButton(page, isActive, isEllipsis = false) {
+    if (isEllipsis) {
+        return `<span class="page-number ellipsis">${page}</span>`;
+    }
+    const pageNum = page;
+    return `<button class="page-number ${isActive ? 'active' : ''}" data-page="${pageNum}">${pageNum}</button>`;
+}
+// Add event listeners for page number clicks
+function attachPageNumberListeners() {
+    const pageNumbers = document.getElementById('pageNumbers');
+    if (pageNumbers) {
+        pageNumbers.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('page-number') && !target.classList.contains('ellipsis')) {
+                const page = parseInt(target.getAttribute('data-page') || '1', 10);
+                if (page !== state.currentPage && page >= 1 && page <= state.totalPages) {
+                    state.currentPage = page;
+                    loadWords();
+                }
+            }
+        });
     }
 }
 // Handle Search

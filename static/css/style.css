@@ -376,16 +376,72 @@ body {
 .pagination-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-#pageInfo {
-    padding: 10px 20px;
+.page-numbers {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.page-number {
+    min-width: 40px;
+    height: 40px;
+    padding: 8px 12px;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-number:hover:not(.active):not(.disabled) {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.page-number.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary-dark);
+    box-shadow: var(--shadow);
+}
+
+.page-number.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-number.ellipsis {
+    border: none;
+    background: transparent;
+    cursor: default;
+    min-width: auto;
+}
+
+.page-number.ellipsis:hover {
+    transform: none;
+    background: transparent;
+}
+
+.page-info {
+    padding: 10px 16px;
     background: var(--bg-color);
     border-radius: 10px;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-secondary);
+    margin-left: 8px;
 }
 
 .words-grid {
