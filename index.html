@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vocabulary Learner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="frontend/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="header-content">
+          <div class="logo-section">
+            <h1 class="logo">Vocabulary Learner</h1>
+            <p class="tagline">Learn vocabulary with a clean, fast UI</p>
+          </div>
+          <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+              <span class="stat-label">Mode</span>
+              <span class="stat-value">Demo</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Words</span>
+              <span class="stat-value" id="demoCount">0</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="control-panel">
+          <div class="panel-card">
+            <h2>Control Panel</h2>
+            <p style="color: var(--text-secondary); margin-top: 6px">
+              This GitHub Pages site is a <strong>static demo</strong>. For full features (download, translate,
+              Anki export), run the backend with <code>python backend/app.py</code>.
+            </p>
+          </div>
+        </section>
+
+        <section class="search-section">
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search words..." class="search-input" />
+            <button class="search-btn" id="searchBtn" aria-label="Search">Search</button>
+          </div>
+          <div class="filter-group">
+            <label for="wordTypeFilter">Filter by type:</label>
+            <select id="wordTypeFilter" class="select-input">
+              <option value="">All</option>
+              <option value="noun">Noun</option>
+              <option value="verb">Verb</option>
+              <option value="adjective">Adjective</option>
+              <option value="adverb">Adverb</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="words-section">
+          <div class="section-header">
+            <h2>Vocabulary List</h2>
+            <span class="page-info" id="pageInfo">Demo dataset</span>
+          </div>
+          <div class="words-grid" id="wordsGrid"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>Static demo on GitHub Pages. Full app requires backend.</p>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="frontend/static/js/pages-demo.js"></script>
+  </body>
+</html>
+
