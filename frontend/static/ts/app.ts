@@ -483,30 +483,48 @@ async function translateViaLibre(word: string, target: string): Promise<string> 
 
     // Try multiple free translation endpoints
     const endpoints = [
-        'https://libretranslate.de/translate',
-        'https://translate.argosopentech.com/translate',
+        { url: 'https://translate.argosopentech.com/translate', method: 'POST' },
+        { url: 'https://libretranslate.de/translate', method: 'POST' },
     ];
     
     for (const endpoint of endpoints) {
         try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            
+            const res = await fetch(endpoint.url, {
+                method: endpoint.method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ q: word, source: 'en', target, format: 'text' }),
-                signal: AbortSignal.timeout(5000)
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
+            
             if (res.ok) {
-                const data = await res.json() as { translatedText?: string };
-                const text = (data.translatedText || '').trim();
-                if (text) {
-                    try { localStorage.setItem(cacheKey, text); } catch { /* noop */ }
-                    return text;
+                const text = await res.text();
+                try {
+                    const data = JSON.parse(text) as { translatedText?: string };
+                    const translated = (data.translatedText || '').trim();
+                    if (translated) {
+                        try { localStorage.setItem(cacheKey, translated); } catch { /* noop */ }
+                        return translated;
+                    }
+                } catch {
+                    // If not JSON, might be plain text
+                    if (text.trim()) {
+                        try { localStorage.setItem(cacheKey, text.trim()); } catch { /* noop */ }
+                        return text.trim();
+                    }
                 }
             }
-        } catch { /* try next endpoint */ }
+        } catch (e) {
+            // Try next endpoint
+            continue;
+        }
     }
     
-    throw new Error('All translation endpoints failed');
+    throw new Error('Translation service unavailable. Try again later.');
 }
 
 async function enrichFromDictionary(word: string): Promise<Partial<Word>> {
