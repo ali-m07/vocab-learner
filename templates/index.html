@@ -81,12 +81,15 @@
         <!-- Vocabulary List -->
         <section class="vocabulary-section">
             <h2 class="section-title">Vocabulary List</h2>
+            <div id="serverStatus" class="server-status" style="display: none;">
+                <p><strong>⚠️ Server Status:</strong> <span id="serverStatusText">Checking...</span></p>
+            </div>
             <div class="words-grid" id="wordsGrid">
                 <div class="loading" id="loading">
-                    <p>Loading...</p>
+                    <p>Loading vocabulary...</p>
                 </div>
             </div>
-            <div class="pagination-controls">
+            <div class="pagination-controls" id="paginationControls" style="display: none;">
                 <button class="btn-icon-only" id="firstPage" title="First page">«</button>
                 <button class="btn-icon-only" id="prevPage" title="Previous page">‹</button>
                 <div class="page-numbers" id="pageNumbers"></div>

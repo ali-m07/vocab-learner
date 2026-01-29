@@ -27,6 +27,7 @@ VOCAB_FILE = DATA_DIR / "vocab_translated.csv"
 
 # Supported languages for translation
 SUPPORTED_LANGUAGES = {
+    'en': 'English',
     'fa': 'Persian',
     'es': 'Spanish',
     'fr': 'French',
@@ -79,7 +80,7 @@ def get_languages():
     """Get supported languages"""
     return jsonify({
         "languages": SUPPORTED_LANGUAGES,
-        "default": "fa"
+        "default": "en"
     })
 
 @app.route('/api/stats')

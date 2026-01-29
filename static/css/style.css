@@ -312,6 +312,33 @@ body {
     font-size: 16px;
 }
 
+/* Server Status */
+.server-status {
+    padding: 15px;
+    margin-bottom: 20px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    color: #856404;
+}
+
+.server-status p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.server-status.error {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.server-status.success {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
 /* Pagination */
 .pagination-controls {
     display: flex;
