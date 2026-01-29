@@ -61,6 +61,13 @@ def build_static_site():
     content = content.replace('src="frontend/static/', 'src="static/')
     content = content.replace("src='frontend/static/", "src='static/")
     
+    # Cache-bust static assets (avoid GitHub Pages serving stale JS/CSS)
+    version = os.getenv("GITHUB_SHA", "")[:8] or os.getenv("SOURCE_VERSION", "")[:8]
+    if not version:
+        version = "v1"
+    content = content.replace("static/css/style.css", f"static/css/style.css?v={version}")
+    content = content.replace("static/js/app.js", f"static/js/app.js?v={version}")
+
     # Write index.html
     output_file = output_dir / 'index.html'
     with open(output_file, 'w', encoding='utf-8') as f:
