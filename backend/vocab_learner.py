@@ -16,11 +16,17 @@ import json
 import requests
 
 class VocabularyLearner:
-    def __init__(self, dataset_name: str = "nezahatkk/10-000-english-words-cerf-labelled", target_language: str = "fa"):
+    def __init__(
+        self,
+        dataset_name: str = "yk1598/479k-english-words",
+        target_language: str = "fa",
+        max_words: int = 20000,
+    ):
         self.dataset_name = dataset_name
         self.dataset_path = None
         self.words_df = None
         self.target_language = target_language
+        self.max_words = max_words
         self.translator = GoogleTranslator(source='en', target=target_language)
         
     def download_dataset(self):
@@ -68,6 +74,10 @@ class VocabularyLearner:
                         self.words_df['word'] = self.words_df['word'].astype(str).str.strip()
                         self.words_df = self.words_df.dropna()
                         self.words_df = self.words_df[self.words_df['word'].str.len() > 0]
+                        # De-duplicate and cap size
+                        self.words_df = self.words_df.drop_duplicates(subset=['word'])
+                        if self.max_words and self.max_words > 0:
+                            self.words_df = self.words_df.head(self.max_words)
                         print(f"✅ Loaded {len(self.words_df)} words")
                         return self.words_df
                 except Exception as e:
@@ -79,7 +89,18 @@ class VocabularyLearner:
             print(f"📄 Found: {file_path}")
             with open(file_path, 'r', encoding='utf-8') as f:
                 words = [line.strip() for line in f if line.strip()]
-            self.words_df = pd.DataFrame({'word': words})
+            # De-duplicate and cap size
+            seen = set()
+            unique_words = []
+            for w in words:
+                lw = w.lower()
+                if lw in seen:
+                    continue
+                seen.add(lw)
+                unique_words.append(w)
+                if self.max_words and self.max_words > 0 and len(unique_words) >= self.max_words:
+                    break
+            self.words_df = pd.DataFrame({'word': unique_words})
             print(f"✅ Loaded {len(self.words_df)} words")
             return self.words_df
         else:

@@ -34,13 +34,16 @@ def build_static_site():
         shutil.copytree(static_src, static_dst)
         print(f"✅ Copied static files from {static_src} to {static_dst}")
     
-    # Read template
+    # Prefer a dedicated Pages homepage at repo root (index.html)
+    # Fallback to the Flask template for local backend usage.
+    root_index = project_root / 'index.html'
     template_file = frontend_dir / 'templates' / 'index.html'
-    if not template_file.exists():
-        print(f"❌ Error: Template not found at {template_file}")
+    source_file = root_index if root_index.exists() else template_file
+    if not source_file.exists():
+        print(f"❌ Error: No index source found at {root_index} or {template_file}")
         sys.exit(1)
-    
-    with open(template_file, 'r', encoding='utf-8') as f:
+
+    with open(source_file, 'r', encoding='utf-8') as f:
         content = f.read()
     
     # Replace Flask url_for with relative paths
@@ -50,6 +53,13 @@ def build_static_site():
         r'static/\1',
         content
     )
+
+    # If using the repo-root Pages homepage, rewrite asset paths:
+    # frontend/static/... -> static/...
+    content = content.replace('href="frontend/static/', 'href="static/')
+    content = content.replace("href='frontend/static/", "href='static/")
+    content = content.replace('src="frontend/static/', 'src="static/')
+    content = content.replace("src='frontend/static/", "src='static/")
     
     # Write index.html
     output_file = output_dir / 'index.html'
