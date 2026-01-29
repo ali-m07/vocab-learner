@@ -252,11 +252,9 @@ def download_dataset():
         
         learner = VocabularyLearner(
             target_language=target_language,
-            dataset_name=dataset_name or "yk1598/479k-english-words",
             max_words=int(max_words) if max_words else 20000,
         )
-        learner.download_dataset()
-        learner.load_words()
+        learner.load_words()  # downloads/caches GitHub word list if needed
         learner.translate_words(include_details=include_details)
         learner.save_csv(str(VOCAB_FILE))
         

@@ -2,12 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 Vocabulary Learning System
-Download dataset, translate to target language, and create Anki deck
+Download word list + POS data, translate, create Anki deck
 """
 
-import kagglehub
 import pandas as pd
-from deep_translator import GoogleTranslator
+from googletrans import Translator
 from pathlib import Path
 import genanki
 import time
@@ -15,101 +14,133 @@ from typing import List, Dict, Optional
 import json
 import requests
 
+
 class VocabularyLearner:
     def __init__(
         self,
-        dataset_name: str = "yk1598/479k-english-words",
         target_language: str = "fa",
         max_words: int = 20000,
+        base_dir: Optional[Path] = None,
+        word_list_url: str = "https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt",  # 10k most common English words from Google's Trillion Word Corpus
     ):
-        self.dataset_name = dataset_name
-        self.dataset_path = None
         self.words_df = None
         self.target_language = target_language
-        self.max_words = max_words
-        self.translator = GoogleTranslator(source='en', target=target_language)
+        self.max_words = int(max_words) if max_words else 0
+        self.translator = Translator()
+
+        # Resolve paths relative to project root (not cwd)
+        self.base_dir = base_dir or Path(__file__).parent.parent
+        self.data_dir = self.base_dir / "data"
+        self.data_dir.mkdir(exist_ok=True)
+
+        # Word list (GitHub raw)
+        self.word_list_url = word_list_url
+        self.word_list_file = self.data_dir / "word_list.txt"
+
+        # POS dictionary (GitHub raw CSV)
+        self.pos_dict: Dict[str, Dict[str, str]] = {}
+        self._load_pos_dictionary()
         
+    def _download_file(self, url: str, dest: Path, timeout: int = 30) -> None:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        resp = requests.get(url, timeout=timeout)
+        resp.raise_for_status()
+        dest.write_bytes(resp.content)
+
     def download_dataset(self):
-        """Download dataset from Kaggle"""
-        print("📥 Downloading dataset...")
-        try:
-            self.dataset_path = kagglehub.dataset_download(self.dataset_name)
-            print(f"✅ Dataset downloaded to: {self.dataset_path}")
-            return self.dataset_path
-        except Exception as e:
-            print(f"❌ Error downloading dataset: {e}")
-            raise
+        """
+        Backward-compat shim (old code called Kaggle download).
+        We now fetch from GitHub word list, so nothing to do here.
+        """
+        return str(self.word_list_file)
     
     def load_words(self):
-        """Load words from dataset files"""
-        if not self.dataset_path:
-            self.download_dataset()
-        
+        """Load words from a GitHub-hosted word list (cached locally)."""
         print("📖 Loading words...")
-        dataset_dir = Path(self.dataset_path)
-        
-        # Search for CSV or TXT files
-        csv_files = list(dataset_dir.rglob("*.csv"))
-        txt_files = list(dataset_dir.rglob("*.txt"))
-        
-        if csv_files:
-            # Use first CSV file
-            file_path = csv_files[0]
-            print(f"📄 Found: {file_path}")
-            
-            # Try different encodings
-            for encoding in ['utf-8', 'latin-1', 'cp1252']:
-                try:
-                    df = pd.read_csv(file_path, encoding=encoding)
-                    # Find word column
-                    word_column = None
-                    for col in df.columns:
-                        if 'word' in col.lower() or 'text' in col.lower() or str(df[col].dtype) == 'object':
-                            word_column = col
-                            break
-                    
-                    if word_column:
-                        self.words_df = df[[word_column]].copy()
-                        self.words_df.columns = ['word']
-                        self.words_df['word'] = self.words_df['word'].astype(str).str.strip()
-                        self.words_df = self.words_df.dropna()
-                        self.words_df = self.words_df[self.words_df['word'].str.len() > 0]
-                        # De-duplicate and cap size
-                        self.words_df = self.words_df.drop_duplicates(subset=['word'])
-                        if self.max_words and self.max_words > 0:
-                            self.words_df = self.words_df.head(self.max_words)
-                        print(f"✅ Loaded {len(self.words_df)} words")
-                        return self.words_df
-                except Exception as e:
+
+        if not self.word_list_file.exists():
+            print("📥 Downloading word list from GitHub...")
+            self._download_file(self.word_list_url, self.word_list_file, timeout=30)
+            print(f"✅ Word list downloaded: {self.word_list_file}")
+
+        words: List[str] = []
+        seen = set()
+        with self.word_list_file.open("r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                w = line.strip()
+                if not w:
                     continue
-            
-        elif txt_files:
-            # Read from TXT file
-            file_path = txt_files[0]
-            print(f"📄 Found: {file_path}")
-            with open(file_path, 'r', encoding='utf-8') as f:
-                words = [line.strip() for line in f if line.strip()]
-            # De-duplicate and cap size
-            seen = set()
-            unique_words = []
-            for w in words:
                 lw = w.lower()
                 if lw in seen:
                     continue
                 seen.add(lw)
-                unique_words.append(w)
-                if self.max_words and self.max_words > 0 and len(unique_words) >= self.max_words:
+                words.append(w)
+                if self.max_words and self.max_words > 0 and len(words) >= self.max_words:
                     break
-            self.words_df = pd.DataFrame({'word': unique_words})
-            print(f"✅ Loaded {len(self.words_df)} words")
-            return self.words_df
-        else:
-            # List files for debugging
-            all_files = list(dataset_dir.rglob("*"))
-            print(f"❌ CSV or TXT file not found. Available files:")
-            for f in all_files[:10]:
-                print(f"  - {f}")
-            raise FileNotFoundError("Word file not found")
+
+        if not words:
+            raise ValueError(f"Word list is empty: {self.word_list_file}")
+
+        self.words_df = pd.DataFrame({"word": words})
+        print(f"✅ Loaded {len(self.words_df)} words")
+        return self.words_df
+
+    def _load_pos_dictionary(self) -> None:
+        """Load POS dictionary from GitHub dataset (cached locally)."""
+        dict_file = self.data_dir / "english_dictionary.csv"
+
+        if not dict_file.exists():
+            try:
+                print("📥 Downloading English dictionary with POS tags from GitHub...")
+                url = "https://raw.githubusercontent.com/benjihillard/English-Dictionary-Database/main/english%20Dictionary.csv"
+                self._download_file(url, dict_file, timeout=60)
+                print(f"✅ Dictionary downloaded: {dict_file}")
+            except Exception as e:
+                print(f"⚠️ Error downloading dictionary: {e}")
+                return
+
+        try:
+            print("📖 Loading POS dictionary...")
+            df = pd.read_csv(dict_file, encoding="utf-8", on_bad_lines="skip")
+
+            word_col = None
+            pos_col = None
+            def_col = None
+
+            for col in df.columns:
+                c = str(col).lower()
+                if word_col is None and "word" in c:
+                    word_col = col
+                elif pos_col is None and ("pos" in c or "part" in c or "speech" in c):
+                    pos_col = col
+                elif def_col is None and ("def" in c or "meaning" in c):
+                    def_col = col
+
+            if not word_col or not pos_col:
+                print(f"⚠️ Could not find word/POS columns. Available: {df.columns.tolist()}")
+                return
+
+            preferred = {"noun", "verb", "adjective", "adverb", "pronoun"}
+
+            for _, row in df.iterrows():
+                word = str(row.get(word_col, "")).strip().lower()
+                if not word:
+                    continue
+                pos = str(row.get(pos_col, "")).strip()
+                definition = str(row.get(def_col, "")).strip() if def_col else ""
+
+                if word not in self.pos_dict:
+                    self.pos_dict[word] = {"pos": pos, "definition": definition}
+                    continue
+
+                cur = (self.pos_dict[word].get("pos") or "").strip().lower()
+                new = (pos or "").strip().lower()
+                if new in preferred and cur not in preferred:
+                    self.pos_dict[word] = {"pos": pos, "definition": definition}
+
+            print(f"✅ Loaded {len(self.pos_dict)} words with POS tags")
+        except Exception as e:
+            print(f"⚠️ Error loading POS dictionary: {e}")
     
     def get_word_info(self, word: str) -> Dict:
         """Get detailed word information: definition, type, examples, pronunciation"""
@@ -119,10 +150,18 @@ class VocabularyLearner:
             'examples': [],
             'pronunciation': ''
         }
-        
+
+        word_lower = word.lower().strip()
+
+        # Prefer local POS dictionary for POS + definition
+        if word_lower in self.pos_dict:
+            d = self.pos_dict[word_lower]
+            info["word_type"] = d.get("pos", "") or ""
+            info["definition"] = d.get("definition", "") or ""
+
         try:
             # Use Free Dictionary API for word information
-            api_url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}"
+            api_url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word_lower}"
             response = requests.get(api_url, timeout=5)
             
             if response.status_code == 200:
@@ -138,13 +177,15 @@ class VocabularyLearner:
                     if 'meanings' in entry and len(entry['meanings']) > 0:
                         meaning = entry['meanings'][0]
                         
-                        # Word type (part of speech)
-                        info['word_type'] = meaning.get('partOfSpeech', '')
+                        # Word type (part of speech) only if local dict didn't provide
+                        if not info["word_type"]:
+                            info['word_type'] = meaning.get('partOfSpeech', '')
                         
                         # Definition and examples
                         if 'definitions' in meaning and len(meaning['definitions']) > 0:
                             definition = meaning['definitions'][0]
-                            info['definition'] = definition.get('definition', '')
+                            if not info["definition"]:
+                                info['definition'] = definition.get('definition', '')
                             
                             # Get examples
                             examples = []
@@ -179,12 +220,43 @@ class VocabularyLearner:
         total = len(self.words_df)
         
         for idx, word in enumerate(self.words_df['word'], 1):
+            translation_success = False
+            max_retries = 3
+            retry_delay = 2.0
+
+            for retry in range(max_retries):
+                try:
+                    if idx > 1:
+                        time.sleep(0.2)
+
+                    result = self.translator.translate(word, src="en", dest=self.target_language)
+                    translation = result.text if result and result.text else ""
+                    if not translation.strip():
+                        raise ValueError("Empty translation received")
+
+                    translations.append(translation)
+                    translation_success = True
+                    break
+                except Exception as e:
+                    msg = str(e).lower()
+                    if retry < max_retries - 1:
+                        if "429" in msg or "rate limit" in msg or "quota" in msg or "too many requests" in msg:
+                            time.sleep(retry_delay * (retry + 1))
+                            continue
+                        if "service unavailable" in msg or "503" in msg or "502" in msg or "timed out" in msg:
+                            time.sleep(retry_delay * (retry + 1))
+                            continue
+                        time.sleep(1)
+                        continue
+
+                    print(f"⚠️ Error translating '{word}' after {max_retries} attempts: {e}")
+                    translations.append("")
+
+            if not translation_success and len(translations) < idx:
+                translations.append("")
+
+            # Get detailed info if requested
             try:
-                # Translate
-                translation = self.translator.translate(word)
-                translations.append(translation)
-                
-                # Get detailed info if requested
                 if include_details:
                     info = self.get_word_info(word)
                     definitions.append(info['definition'])
@@ -196,21 +268,19 @@ class VocabularyLearner:
                     word_types.append('')
                     examples_list.append('[]')
                     pronunciations.append('')
-                
-                if idx % 10 == 0:
-                    print(f"📊 Progress: {idx}/{total} ({idx*100//total}%)")
-                
-                # Delay to prevent rate limiting
-                if idx % batch_size == 0:
-                    time.sleep(delay)
-                    
-            except Exception as e:
-                print(f"⚠️ Error translating '{word}': {e}")
-                translations.append("")
+            except Exception:
                 definitions.append("")
                 word_types.append("")
                 examples_list.append("[]")
                 pronunciations.append("")
+
+            if idx % 10 == 0:
+                translated_count = sum(1 for t in translations if t)
+                print(f"📊 Progress: {idx}/{total} ({idx*100//total}%) | Translated: {translated_count}/{idx}")
+
+            if idx % batch_size == 0:
+                time.sleep(delay)
+                print(f"⏸️  Pausing {delay}s after {idx} words to avoid rate limits...")
         
         self.words_df['translation'] = translations
         if include_details:
@@ -330,19 +400,16 @@ def main():
     learner = VocabularyLearner(target_language='fa')
     
     try:
-        # 1. Download dataset
-        learner.download_dataset()
-        
-        # 2. Load words
+        # 1. Load words (download/cached)
         learner.load_words()
         
-        # 3. Translate words with details
+        # 2. Translate words with details
         learner.translate_words(include_details=True)
         
-        # 4. Save CSV
+        # 3. Save CSV
         learner.save_csv("vocab_translated.csv")
         
-        # 5. Create Anki deck
+        # 4. Create Anki deck
         learner.create_anki_deck("English Vocabulary 10000", "vocab_deck.apkg")
         
         print("\n" + "=" * 50)
