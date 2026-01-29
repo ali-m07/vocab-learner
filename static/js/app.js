@@ -274,28 +274,9 @@ async function loadWords(page = state.currentPage) {
         return;
     state.isLoading = true;
     grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
-    try {
-        const params = new URLSearchParams({
-            page: page.toString(),
-            per_page: '50',
-            ...(state.currentSearch && { search: state.currentSearch }),
-            ...(state.selectedWordType && { type: state.selectedWordType })
-        });
-        const response = await fetch(`${API_BASE}/api/words?${params}`);
-        const data = await response.json();
-        if (data.words.length === 0) {
-            grid.innerHTML = '<div class="loading"><p>No words found</p></div>';
-            return;
-        }
-        state.currentPage = data.page;
-        state.totalPages = data.total_pages;
-        state.words = data.words;
-        updatePagination();
-        attachPageNumberListeners();
-        renderWords(data.words);
-    }
-    catch (error) {
-        // Offline fallback: load static list with pre-translated data
+    
+    // If no backend configured, use static files directly
+    if (!hasBackendConfigured()) {
         try {
             if (!offlineWords) {
                 // Try to load pre-translated words first
@@ -363,17 +344,44 @@ async function loadWords(page = state.currentPage) {
             updatePagination();
             attachPageNumberListeners();
             renderWords(words);
-            const hasTranslations = words.some(w => !!w.translation);
-            showToast(hasTranslations
-                ? `Loaded ${words.length} words with translations`
-                : 'Words loaded successfully.', 'success');
             // Also update stats
             loadStats();
             return;
         }
         catch (offlineErr) {
-            grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading: ${error instanceof Error ? error.message : 'Unknown error'}</p></div>`;
+            console.error('Error loading offline words:', offlineErr);
+            grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading words: ${offlineErr instanceof Error ? offlineErr.message : 'Unknown error'}</p></div>`;
         }
+        finally {
+            state.isLoading = false;
+        }
+        return;
+    }
+    
+    // Backend mode: try API first
+    try {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            per_page: '50',
+            ...(state.currentSearch && { search: state.currentSearch }),
+            ...(state.selectedWordType && { type: state.selectedWordType })
+        });
+        const response = await fetch(`${API_BASE}/api/words?${params}`);
+        const data = await response.json();
+        if (data.words.length === 0) {
+            grid.innerHTML = '<div class="loading"><p>No words found</p></div>';
+            return;
+        }
+        state.currentPage = data.page;
+        state.totalPages = data.total_pages;
+        state.words = data.words;
+        updatePagination();
+        attachPageNumberListeners();
+        renderWords(data.words);
+    }
+    catch (error) {
+        console.error('Error loading words:', error);
+        grid.innerHTML = `<div class="loading"><p style="color: var(--danger-color);">Error loading: ${error instanceof Error ? error.message : 'Unknown error'}</p></div>`;
     }
     finally {
         state.isLoading = false;
