@@ -100,6 +100,9 @@ jobs:
       - name: Build static site
         run: |
           python3 build_static.py
+          # Also copy static files to root for GitHub Pages (if serving from root)
+          mkdir -p static
+          cp -r frontend/static/* static/ || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
