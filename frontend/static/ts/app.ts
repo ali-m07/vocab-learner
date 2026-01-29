@@ -426,7 +426,7 @@ async function loadWords(page: number = state.currentPage): Promise<void> {
             showToast(
                 hasTranslations 
                     ? `Loaded ${words.length} words with translations` 
-                    : 'Loaded offline word list. Translations available per word.',
+                    : 'Words loaded successfully.',
                 'success'
             );
             // Also update stats

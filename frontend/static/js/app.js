@@ -366,7 +366,7 @@ async function loadWords(page = state.currentPage) {
             const hasTranslations = words.some(w => !!w.translation);
             showToast(hasTranslations
                 ? `Loaded ${words.length} words with translations`
-                : 'Loaded offline word list. Translations available per word.', 'success');
+                : 'Words loaded successfully.', 'success');
             // Also update stats
             loadStats();
             return;
