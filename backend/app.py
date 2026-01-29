@@ -124,7 +124,14 @@ def stats():
 def get_words():
     """Get words with pagination and search"""
     if not VOCAB_FILE.exists():
-        return jsonify({"error": "Vocabulary file not found. Please download and translate the dataset first."}), 404
+        return jsonify({
+            "words": [],
+            "total": 0,
+            "page": 1,
+            "per_page": 50,
+            "total_pages": 0,
+            "error": "Vocabulary file not found. Please click 'Download & Translate Dataset' to get started."
+        }), 200
     
     try:
         df = pd.read_csv(VOCAB_FILE, encoding='utf-8-sig')
