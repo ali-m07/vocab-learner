@@ -10,7 +10,7 @@ install: ## Install dependencies
 	npm run build
 
 run: ## Run Flask application
-	python app.py
+	python backend/app.py
 
 run-cli: ## Run CLI script
 	python vocab_learner.py

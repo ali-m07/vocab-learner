@@ -2,27 +2,25 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# نصب وابستگی‌های سیستم
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# کپی requirements و نصب
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# کپی فایل‌های پروژه
-COPY vocab_learner.py .
-COPY daily_review.py .
-COPY app.py .
-COPY templates/ ./templates/
-COPY static/ ./static/
+# Copy project files
+COPY backend/ ./backend/
+COPY frontend/ ./frontend/
 
-# ایجاد دایرکتوری برای داده‌ها
+# Create data directories
 RUN mkdir -p /app/data /app/uploads
 
-# پورت
+# Port
 EXPOSE 5000
 
-# اجرای اپلیکیشن
-CMD ["python", "app.py"]
+# Run application
+WORKDIR /app
+CMD ["python", "backend/app.py"]
