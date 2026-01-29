@@ -9,9 +9,16 @@ from pathlib import Path
 
 def build_static_site():
     """Build static site for GitHub Pages"""
+    import sys
+    
     project_root = Path(__file__).parent
     frontend_dir = project_root / 'frontend'
     output_dir = project_root / '_site'
+    
+    # Verify frontend directory exists
+    if not frontend_dir.exists():
+        print(f"❌ Error: Frontend directory not found at {frontend_dir}")
+        sys.exit(1)
     
     # Create output directory
     output_dir.mkdir(exist_ok=True)
@@ -19,16 +26,19 @@ def build_static_site():
     # Copy static files
     static_src = frontend_dir / 'static'
     static_dst = output_dir / 'static'
-    if static_src.exists():
+    if not static_src.exists():
+        print(f"⚠️  Warning: Static directory not found at {static_src}")
+    else:
         if static_dst.exists():
             shutil.rmtree(static_dst)
         shutil.copytree(static_src, static_dst)
+        print(f"✅ Copied static files from {static_src} to {static_dst}")
     
     # Read template
     template_file = frontend_dir / 'templates' / 'index.html'
     if not template_file.exists():
-        print(f"Error: Template not found at {template_file}")
-        return
+        print(f"❌ Error: Template not found at {template_file}")
+        sys.exit(1)
     
     with open(template_file, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -50,10 +60,15 @@ def build_static_site():
     nojekyll_file = output_dir / '.nojekyll'
     nojekyll_file.touch()
     
-    print(f"✅ Static site built at {output_dir}")
-    print(f"   - index.html")
-    print(f"   - static/ directory")
-    print(f"   - .nojekyll file")
+    # Verify output
+    if not output_file.exists():
+        print(f"❌ Error: Failed to create index.html")
+        sys.exit(1)
+    
+    print(f"✅ Static site built successfully at {output_dir}")
+    print(f"   ✓ index.html")
+    print(f"   ✓ static/ directory")
+    print(f"   ✓ .nojekyll file")
 
 if __name__ == '__main__':
     build_static_site()

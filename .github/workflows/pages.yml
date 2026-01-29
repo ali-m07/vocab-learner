@@ -33,12 +33,23 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "⚠️  No package.json found in frontend directory"
+            exit 1
+          fi
 
       - name: Build TypeScript
         run: |
           cd frontend
-          npm run build
+          if [ -f tsconfig.json ]; then
+            npm run build
+            echo "✅ TypeScript build completed"
+            ls -la static/js/ || echo "⚠️  No JS files generated"
+          else
+            echo "⚠️  No tsconfig.json found, skipping TypeScript build"
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -57,13 +68,22 @@ jobs:
         with:
           path: _site
           
-      - name: Show build info
+      - name: Verify build output
         run: |
           echo "📦 Built files:"
-          ls -la _site/
+          ls -la _site/ || echo "❌ _site directory not found"
           echo ""
           echo "📁 Static directory:"
-          ls -la _site/static/ || echo "No static directory"
+          ls -la _site/static/ || echo "⚠️  No static directory"
+          echo ""
+          echo "📄 Checking index.html:"
+          if [ -f _site/index.html ]; then
+            echo "✅ index.html exists"
+            head -n 10 _site/index.html
+          else
+            echo "❌ index.html not found"
+            exit 1
+          fi
 
   deploy:
     environment:
