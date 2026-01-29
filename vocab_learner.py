@@ -158,12 +158,50 @@ class VocabularyLearner:
         total = len(self.words_df)
         
         for idx, word in enumerate(self.words_df['word'], 1):
+            translation_success = False
+            max_retries = 3
+            retry_delay = 2.0
+            
+            for retry in range(max_retries):
+                try:
+                    # Translate with retry
+                    translation = self.translator.translate(word)
+                    if translation and translation.strip():
+                        translations.append(translation)
+                        translation_success = True
+                        break
+                    else:
+                        raise ValueError("Empty translation received")
+                        
+                except Exception as e:
+                    error_msg = str(e).lower()
+                    if retry < max_retries - 1:
+                        # Check if it's a rate limit or service error
+                        if '429' in error_msg or 'rate limit' in error_msg or 'quota' in error_msg:
+                            wait_time = retry_delay * (retry + 1)
+                            print(f"⏳ Rate limit hit. Waiting {wait_time}s before retry {retry + 1}/{max_retries}...")
+                            time.sleep(wait_time)
+                            continue
+                        elif 'service unavailable' in error_msg or '503' in error_msg or '502' in error_msg:
+                            wait_time = retry_delay * (retry + 1)
+                            print(f"⏳ Service unavailable. Waiting {wait_time}s before retry {retry + 1}/{max_retries}...")
+                            time.sleep(wait_time)
+                            continue
+                        else:
+                            # For other errors, wait shorter time
+                            time.sleep(1)
+                            continue
+                    else:
+                        # Last retry failed
+                        print(f"⚠️ Error translating '{word}' after {max_retries} attempts: {e}")
+                        translations.append("")
+                        break
+            
+            if not translation_success:
+                translations.append("")
+            
+            # Get detailed info if requested (only if translation succeeded or we want to try anyway)
             try:
-                # Translate
-                translation = self.translator.translate(word)
-                translations.append(translation)
-                
-                # Get detailed info if requested
                 if include_details:
                     info = self.get_word_info(word)
                     definitions.append(info['definition'])
@@ -175,21 +213,20 @@ class VocabularyLearner:
                     word_types.append('')
                     examples_list.append('[]')
                     pronunciations.append('')
-                
-                if idx % 10 == 0:
-                    print(f"📊 Progress: {idx}/{total} ({idx*100//total}%)")
-                
-                # Delay to prevent rate limiting
-                if idx % batch_size == 0:
-                    time.sleep(delay)
-                    
             except Exception as e:
-                print(f"⚠️ Error translating '{word}': {e}")
-                translations.append("")
-                definitions.append("")
-                word_types.append("")
-                examples_list.append("[]")
-                pronunciations.append("")
+                print(f"⚠️ Error getting word info for '{word}': {e}")
+                definitions.append('')
+                word_types.append('')
+                examples_list.append('[]')
+                pronunciations.append('')
+            
+            if idx % 10 == 0:
+                translated_count = sum(1 for t in translations if t)
+                print(f"📊 Progress: {idx}/{total} ({idx*100//total}%) | Translated: {translated_count}/{idx}")
+            
+            # Delay to prevent rate limiting
+            if idx % batch_size == 0:
+                time.sleep(delay)
         
         self.words_df['translation'] = translations
         if include_details:

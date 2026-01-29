@@ -233,17 +233,65 @@ def download_dataset():
         learner = VocabularyLearner(target_language=target_language)
         learner.download_dataset()
         learner.load_words()
-        learner.translate_words(include_details=include_details)
+        
+        # Translate with better error handling
+        try:
+            learner.translate_words(include_details=include_details)
+        except Exception as e:
+            error_msg = str(e).lower()
+            if 'rate limit' in error_msg or '429' in error_msg or 'quota' in error_msg:
+                return jsonify({
+                    "success": False,
+                    "error": "Translation service rate limit exceeded. Please wait a few minutes and try again, or translate fewer words at once."
+                }), 429
+            elif 'service unavailable' in error_msg or '503' in error_msg or '502' in error_msg:
+                return jsonify({
+                    "success": False,
+                    "error": "Translation service is temporarily unavailable. Please try again in a few minutes."
+                }), 503
+            else:
+                # Save partial results if any translations succeeded
+                translated_count = sum(1 for t in learner.words_df.get('translation', []) if t and t.strip())
+                if translated_count > 0:
+                    learner.save_csv(str(VOCAB_FILE))
+                    return jsonify({
+                        "success": False,
+                        "error": f"Translation partially completed. {translated_count} words translated. Error: {str(e)}",
+                        "partial_success": True,
+                        "translated_count": translated_count
+                    }), 206
+                else:
+                    return jsonify({
+                        "success": False,
+                        "error": f"Translation failed: {str(e)}"
+                    }), 500
+        
         learner.save_csv(str(VOCAB_FILE))
+        
+        # Count successful translations
+        translated_count = sum(1 for t in learner.words_df.get('translation', []) if t and t.strip())
         
         return jsonify({
             "success": True,
-            "message": f"✅ {len(learner.words_df)} words downloaded and translated to {SUPPORTED_LANGUAGES[target_language]}",
+            "message": f"✅ {len(learner.words_df)} words downloaded. {translated_count} words translated to {SUPPORTED_LANGUAGES[target_language]}",
             "total_words": len(learner.words_df),
+            "translated_count": translated_count,
             "target_language": target_language
         })
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        error_msg = str(e).lower()
+        if 'rate limit' in error_msg or '429' in error_msg:
+            return jsonify({
+                "success": False,
+                "error": "Translation service rate limit exceeded. Please wait a few minutes and try again."
+            }), 429
+        elif 'service unavailable' in error_msg or '503' in error_msg:
+            return jsonify({
+                "success": False,
+                "error": "Translation service is temporarily unavailable. Please try again later."
+            }), 503
+        else:
+            return jsonify({"success": False, "error": f"Error: {str(e)}"}), 500
 
 @app.route('/api/create-anki', methods=['POST'])
 def create_anki():
