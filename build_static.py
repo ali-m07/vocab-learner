@@ -34,6 +34,17 @@ def build_static_site():
         shutil.copytree(static_src, static_dst)
         print(f"✅ Copied static files from {static_src} to {static_dst}")
     
+    # Copy data files from root static/data/ if they exist
+    root_data_src = project_root / 'static' / 'data'
+    data_dst = output_dir / 'static' / 'data'
+    if root_data_src.exists():
+        data_dst.mkdir(parents=True, exist_ok=True)
+        for json_file in root_data_src.glob('*.json'):
+            shutil.copy2(json_file, data_dst / json_file.name)
+            print(f"✅ Copied {json_file.name} to {data_dst}")
+    else:
+        print(f"⚠️  Warning: Data directory not found at {root_data_src}")
+    
     # Prefer a dedicated Pages homepage at repo root (index.html)
     # Fallback to the Flask template for local backend usage.
     root_index = project_root / 'index.html'
