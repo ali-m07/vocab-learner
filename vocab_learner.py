@@ -22,6 +22,9 @@ class VocabularyLearner:
         self.words_df = None
         self.target_language = target_language
         self.translator = Translator()
+        # Load English dictionary with POS tags from GitHub
+        self.pos_dict = {}
+        self._load_pos_dictionary()
         
     def download_dataset(self):
         """Download dataset from Kaggle"""
@@ -90,6 +93,69 @@ class VocabularyLearner:
                 print(f"  - {f}")
             raise FileNotFoundError("Word file not found")
     
+    def _load_pos_dictionary(self):
+        """Load POS dictionary from GitHub dataset"""
+        dict_file = Path("data/english_dictionary.csv")
+        
+        # Download if not exists
+        if not dict_file.exists():
+            try:
+                print("📥 Downloading English dictionary with POS tags from GitHub...")
+                dict_file.parent.mkdir(exist_ok=True)
+                url = "https://raw.githubusercontent.com/benjihillard/English-Dictionary-Database/main/english%20Dictionary.csv"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    dict_file.write_bytes(response.content)
+                    print(f"✅ Dictionary downloaded: {len(response.content)} bytes")
+                else:
+                    print(f"⚠️ Could not download dictionary: HTTP {response.status_code}")
+                    return
+            except Exception as e:
+                print(f"⚠️ Error downloading dictionary: {e}")
+                return
+        
+        # Load dictionary
+        try:
+            print("📖 Loading POS dictionary...")
+            df = pd.read_csv(dict_file, encoding='utf-8', on_bad_lines='skip')
+            
+            # Map column names (might vary)
+            word_col = None
+            pos_col = None
+            def_col = None
+            
+            for col in df.columns:
+                col_lower = col.lower()
+                if 'word' in col_lower and word_col is None:
+                    word_col = col
+                elif 'pos' in col_lower or 'part' in col_lower or 'speech' in col_lower:
+                    pos_col = col
+                elif 'def' in col_lower or 'meaning' in col_lower:
+                    def_col = col
+            
+            if word_col and pos_col:
+                # Create dictionary: word -> (pos, definition)
+                for _, row in df.iterrows():
+                    word = str(row[word_col]).strip().lower()
+                    pos = str(row[pos_col]).strip() if pos_col else ''
+                    definition = str(row[def_col]).strip() if def_col else ''
+                    
+                    if word and word not in self.pos_dict:
+                        self.pos_dict[word] = {'pos': pos, 'definition': definition}
+                    elif word and word in self.pos_dict:
+                        # If multiple entries, prefer more common POS (noun, verb, adj, adv)
+                        current_pos = self.pos_dict[word]['pos'].lower()
+                        new_pos = pos.lower()
+                        preferred = ['noun', 'verb', 'adjective', 'adverb', 'pronoun']
+                        if new_pos in preferred and current_pos not in preferred:
+                            self.pos_dict[word] = {'pos': pos, 'definition': definition}
+                
+                print(f"✅ Loaded {len(self.pos_dict)} words with POS tags")
+            else:
+                print(f"⚠️ Could not find word/POS columns. Available: {df.columns.tolist()}")
+        except Exception as e:
+            print(f"⚠️ Error loading POS dictionary: {e}")
+    
     def get_word_info(self, word: str) -> Dict:
         """Get detailed word information: definition, type, examples, pronunciation"""
         info = {
@@ -99,9 +165,17 @@ class VocabularyLearner:
             'pronunciation': ''
         }
         
+        word_lower = word.lower().strip()
+        
+        # First try POS dictionary (more accurate)
+        if word_lower in self.pos_dict:
+            pos_data = self.pos_dict[word_lower]
+            info['word_type'] = pos_data.get('pos', '')
+            info['definition'] = pos_data.get('definition', '')
+        
+        # Then try Free Dictionary API for pronunciation and examples
         try:
-            # Use Free Dictionary API for word information
-            api_url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word.lower()}"
+            api_url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word_lower}"
             response = requests.get(api_url, timeout=5)
             
             if response.status_code == 200:
@@ -117,23 +191,26 @@ class VocabularyLearner:
                     if 'meanings' in entry and len(entry['meanings']) > 0:
                         meaning = entry['meanings'][0]
                         
-                        # Word type (part of speech)
-                        info['word_type'] = meaning.get('partOfSpeech', '')
+                        # Only use API word_type if we don't have it from dictionary
+                        if not info['word_type']:
+                            info['word_type'] = meaning.get('partOfSpeech', '')
                         
-                        # Definition and examples
-                        if 'definitions' in meaning and len(meaning['definitions']) > 0:
-                            definition = meaning['definitions'][0]
-                            info['definition'] = definition.get('definition', '')
-                            
-                            # Get examples
-                            examples = []
-                            for def_item in meaning['definitions'][:3]:  # Get up to 3 examples
-                                if 'example' in def_item:
-                                    examples.append(def_item['example'])
-                            info['examples'] = examples[:2]  # Max 2 examples
+                        # Use API definition if dictionary doesn't have it
+                        if not info['definition']:
+                            if 'definitions' in meaning and len(meaning['definitions']) > 0:
+                                definition = meaning['definitions'][0]
+                                info['definition'] = definition.get('definition', '')
+                        
+                        # Get examples
+                        examples = []
+                        for def_item in meaning.get('definitions', [])[:3]:
+                            if 'example' in def_item:
+                                examples.append(def_item['example'])
+                        info['examples'] = examples[:2]  # Max 2 examples
                             
         except Exception as e:
-            print(f"⚠️ Error fetching word info for '{word}': {e}")
+            # Silent fail - we already have POS from dictionary
+            pass
         
         return info
     
