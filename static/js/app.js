@@ -303,40 +303,104 @@ async function loadWords(page = state.currentPage) {
                 try {
                     translatedResp = await fetch('static/data/words_translated.json', { cache: 'no-cache' });
                 }
-                catch { /* ignore */ }
+                catch (e) { 
+                    console.error('Error fetching words_translated.json:', e);
+                }
                 if (translatedResp && translatedResp.ok) {
-                    const translatedData = await translatedResp.json();
-                    const lang = state.selectedLanguage || guessLanguageCode();
-                    const preTranslated = (translatedData.words || []).map((w) => ({
-                        word: w.word || '',
-                        translation: w.translations?.[lang] || '',
-                        definition: w.definition || '',
-                        word_type: w.word_type || '',
-                        examples: w.examples || [],
-                        pronunciation: w.pronunciation || '',
-                    }));
-                    // Load remaining words from plain list and merge
-                    try {
-                        const plainResp = await fetch('static/data/words.json', { cache: 'no-cache' });
-                        const plainData = (await plainResp.json());
-                        const plainWords = (plainData.words || []).map((w) => ({ word: w }));
-                        // Create a map of pre-translated words
-                        const translatedMap = new Map(preTranslated.map(w => [w.word.toLowerCase(), w]));
-                        // Merge: use pre-translated if available, otherwise plain
-                        offlineWords = plainWords.map(w => {
-                            const translated = translatedMap.get(w.word.toLowerCase());
-                            return translated || w;
-                        });
-                    }
-                    catch {
-                        offlineWords = preTranslated;
+                    const contentType = translatedResp.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        try {
+                            const translatedData = await translatedResp.json();
+                            const lang = state.selectedLanguage || guessLanguageCode();
+                            const preTranslated = (translatedData.words || []).map((w) => ({
+                                word: w.word || '',
+                                translation: w.translations?.[lang] || '',
+                                definition: w.definition || '',
+                                word_type: w.word_type || '',
+                                examples: w.examples || [],
+                                pronunciation: w.pronunciation || '',
+                            }));
+                            // Load remaining words from plain list and merge
+                            try {
+                                const plainResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                                if (plainResp && plainResp.ok) {
+                                    const plainContentType = plainResp.headers.get('content-type');
+                                    if (plainContentType && plainContentType.includes('application/json')) {
+                                        const plainData = await plainResp.json();
+                                        const plainWords = (plainData.words || []).map((w) => ({ word: w }));
+                                        // Create a map of pre-translated words
+                                        const translatedMap = new Map(preTranslated.map(w => [w.word.toLowerCase(), w]));
+                                        // Merge: use pre-translated if available, otherwise plain
+                                        offlineWords = plainWords.map(w => {
+                                            const translated = translatedMap.get(w.word.toLowerCase());
+                                            return translated || w;
+                                        });
+                                    } else {
+                                        console.warn('words.json is not JSON, using pre-translated only');
+                                        offlineWords = preTranslated;
+                                    }
+                                } else {
+                                    offlineWords = preTranslated;
+                                }
+                            }
+                            catch (e) {
+                                console.error('Error loading words.json:', e);
+                                offlineWords = preTranslated;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing words_translated.json:', e);
+                            // Fallback to plain word list
+                            try {
+                                const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                                if (offlineResp && offlineResp.ok) {
+                                    const offlineContentType = offlineResp.headers.get('content-type');
+                                    if (offlineContentType && offlineContentType.includes('application/json')) {
+                                        const payload = await offlineResp.json();
+                                        offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                                    } else {
+                                        throw new Error('words.json is not JSON');
+                                    }
+                                } else {
+                                    throw new Error('Failed to fetch words.json');
+                                }
+                            } catch (e2) {
+                                console.error('Error loading words.json fallback:', e2);
+                                throw e2;
+                            }
+                        }
+                    } else {
+                        console.warn('words_translated.json is not JSON, falling back to words.json');
+                        // Fallback to plain word list
+                        const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                        if (offlineResp && offlineResp.ok) {
+                            const offlineContentType = offlineResp.headers.get('content-type');
+                            if (offlineContentType && offlineContentType.includes('application/json')) {
+                                const payload = await offlineResp.json();
+                                offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                            } else {
+                                throw new Error('words.json is not JSON');
+                            }
+                        } else {
+                            throw new Error('Failed to fetch words.json');
+                        }
                     }
                 }
                 else {
                     // Fallback to plain word list
                     const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
-                    const payload = (await offlineResp.json());
-                    offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                    if (offlineResp && offlineResp.ok) {
+                        const offlineContentType = offlineResp.headers.get('content-type');
+                        if (offlineContentType && offlineContentType.includes('application/json')) {
+                            const payload = await offlineResp.json();
+                            offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                        } else {
+                            const text = await offlineResp.text();
+                            console.error('words.json is not JSON. Response:', text.substring(0, 200));
+                            throw new Error('words.json is not JSON');
+                        }
+                    } else {
+                        throw new Error(`Failed to fetch words.json: ${offlineResp?.status || 'unknown'}`);
+                    }
                 }
             }
             const q = state.currentSearch.trim().toLowerCase();
