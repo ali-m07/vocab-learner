@@ -250,9 +250,10 @@ async function loadStats() {
     catch (error) {
         // Offline fallback: compute from static list if available
         if (offlineWords) {
+            const translatedCount = offlineWords.filter(w => !!w.translation).length;
             state.stats = {
                 total_words: offlineWords.length,
-                translated_words: offlineWords.filter(w => !!w.translation).length,
+                translated_words: translatedCount,
                 vocab_file_exists: true
             };
             const totalWordsEl = document.getElementById('totalWords');
@@ -294,12 +295,33 @@ async function loadWords(page = state.currentPage) {
         renderWords(data.words);
     }
     catch (error) {
-        // Offline fallback: load static list and do client-side pagination/search.
+        // Offline fallback: load static list with pre-translated data
         try {
             if (!offlineWords) {
-                const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
-                const payload = (await offlineResp.json());
-                offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                // Try to load pre-translated words first
+                let translatedResp = null;
+                try {
+                    translatedResp = await fetch('static/data/words_translated.json', { cache: 'no-cache' });
+                }
+                catch { /* ignore */ }
+                if (translatedResp && translatedResp.ok) {
+                    const translatedData = await translatedResp.json();
+                    const lang = state.selectedLanguage || guessLanguageCode();
+                    offlineWords = (translatedData.words || []).map((w) => ({
+                        word: w.word || '',
+                        translation: w.translations?.[lang] || '',
+                        definition: w.definition || '',
+                        word_type: w.word_type || '',
+                        examples: w.examples || [],
+                        pronunciation: w.pronunciation || '',
+                    }));
+                }
+                else {
+                    // Fallback to plain word list
+                    const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                    const payload = (await offlineResp.json());
+                    offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                }
             }
             const q = state.currentSearch.trim().toLowerCase();
             const t = state.selectedWordType.trim().toLowerCase();
@@ -325,7 +347,10 @@ async function loadWords(page = state.currentPage) {
             updatePagination();
             attachPageNumberListeners();
             renderWords(words);
-            showToast('Loaded offline word list (no backend). Set a backend URL for translations/examples.', 'success');
+            const hasTranslations = words.some(w => !!w.translation);
+            showToast(hasTranslations
+                ? `Loaded ${words.length} words with translations`
+                : 'Loaded offline word list. Translations available per word.', 'success');
             // Also update stats
             loadStats();
             return;
@@ -377,22 +402,34 @@ async function translateViaLibre(word, target) {
             return cached;
     }
     catch { /* noop */ }
-    const res = await fetch('https://libretranslate.de/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: word, source: 'en', target, format: 'text' })
-    });
-    if (!res.ok)
-        throw new Error(`Translate failed (${res.status})`);
-    const data = await res.json();
-    const text = (data.translatedText || '').trim();
-    if (!text)
-        throw new Error('Empty translation');
-    try {
-        localStorage.setItem(cacheKey, text);
+    // Try multiple free translation endpoints
+    const endpoints = [
+        'https://libretranslate.de/translate',
+        'https://translate.argosopentech.com/translate',
+    ];
+    for (const endpoint of endpoints) {
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q: word, source: 'en', target, format: 'text' }),
+                signal: AbortSignal.timeout(5000)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = (data.translatedText || '').trim();
+                if (text) {
+                    try {
+                        localStorage.setItem(cacheKey, text);
+                    }
+                    catch { /* noop */ }
+                    return text;
+                }
+            }
+        }
+        catch { /* try next endpoint */ }
     }
-    catch { /* noop */ }
-    return text;
+    throw new Error('All translation endpoints failed');
 }
 async function enrichFromDictionary(word) {
     // Free dictionary API for definition/examples (usage)

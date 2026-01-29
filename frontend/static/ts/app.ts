@@ -297,11 +297,12 @@ async function loadStats(): Promise<void> {
             translatedWordsEl.textContent = data.translated_words.toLocaleString();
         }
     } catch (error) {
-        // Offline fallback: compute from static list if available
+            // Offline fallback: compute from static list if available
         if (offlineWords) {
+            const translatedCount = offlineWords.filter(w => !!w.translation).length;
             state.stats = {
                 total_words: offlineWords.length,
-                translated_words: offlineWords.filter(w => !!w.translation).length,
+                translated_words: translatedCount,
                 vocab_file_exists: true
             };
             const totalWordsEl = document.getElementById('totalWords');
@@ -347,12 +348,32 @@ async function loadWords(page: number = state.currentPage): Promise<void> {
         renderWords(data.words);
         
     } catch (error) {
-        // Offline fallback: load static list and do client-side pagination/search.
+        // Offline fallback: load static list with pre-translated data
         try {
             if (!offlineWords) {
-                const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
-                const payload = (await offlineResp.json()) as OfflineWordsPayload;
-                offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                // Try to load pre-translated words first
+                let translatedResp: Response | null = null;
+                try {
+                    translatedResp = await fetch('static/data/words_translated.json', { cache: 'no-cache' });
+                } catch { /* ignore */ }
+                
+                if (translatedResp && translatedResp.ok) {
+                    const translatedData = await translatedResp.json() as { words: any[] };
+                    const lang = state.selectedLanguage || guessLanguageCode();
+                    offlineWords = (translatedData.words || []).map((w: any) => ({
+                        word: w.word || '',
+                        translation: w.translations?.[lang] || '',
+                        definition: w.definition || '',
+                        word_type: w.word_type || '',
+                        examples: w.examples || [],
+                        pronunciation: w.pronunciation || '',
+                    }));
+                } else {
+                    // Fallback to plain word list
+                    const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                    const payload = (await offlineResp.json()) as OfflineWordsPayload;
+                    offlineWords = (payload.words || []).map((w) => ({ word: w }));
+                }
             }
 
             const q = state.currentSearch.trim().toLowerCase();
@@ -383,7 +404,13 @@ async function loadWords(page: number = state.currentPage): Promise<void> {
             updatePagination();
             attachPageNumberListeners();
             renderWords(words);
-            showToast('Loaded offline word list (no backend). Set a backend URL for translations/examples.', 'success');
+            const hasTranslations = words.some(w => !!w.translation);
+            showToast(
+                hasTranslations 
+                    ? `Loaded ${words.length} words with translations` 
+                    : 'Loaded offline word list. Translations available per word.',
+                'success'
+            );
             // Also update stats
             loadStats();
             return;
@@ -414,7 +441,7 @@ function createWordCard(word: Word): string {
                 ${word.pronunciation ? `<div class="word-pronunciation">${escapeHtml(word.pronunciation)}</div>` : ''}
             </div>
             <div class="word-back">
-                <div class="word-translation">${escapeHtml(word.translation || (isOfflineMode() ? 'Translation not loaded' : 'No translation'))}</div>
+                <div class="word-translation">${escapeHtml(word.translation || 'Click Translate')}</div>
                 ${!word.translation ? `<button class="btn btn-primary btn-translate" data-word="${escapeHtml(word.word)}" onclick="event.stopPropagation(); window.__translateWord?.('${escapeHtml(word.word)}');">Translate</button>` : ''}
                 ${word.word_type ? `<div class="word-type-badge">${escapeHtml(word.word_type)}</div>` : ''}
                 ${word.definition ? `<div class="word-definition">${escapeHtml(word.definition)}</div>` : ''}
@@ -436,17 +463,32 @@ async function translateViaLibre(word: string, target: string): Promise<string> 
         if (cached) return cached;
     } catch { /* noop */ }
 
-    const res = await fetch('https://libretranslate.de/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: word, source: 'en', target, format: 'text' })
-    });
-    if (!res.ok) throw new Error(`Translate failed (${res.status})`);
-    const data = await res.json() as { translatedText?: string };
-    const text = (data.translatedText || '').trim();
-    if (!text) throw new Error('Empty translation');
-    try { localStorage.setItem(cacheKey, text); } catch { /* noop */ }
-    return text;
+    // Try multiple free translation endpoints
+    const endpoints = [
+        'https://libretranslate.de/translate',
+        'https://translate.argosopentech.com/translate',
+    ];
+    
+    for (const endpoint of endpoints) {
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q: word, source: 'en', target, format: 'text' }),
+                signal: AbortSignal.timeout(5000)
+            });
+            if (res.ok) {
+                const data = await res.json() as { translatedText?: string };
+                const text = (data.translatedText || '').trim();
+                if (text) {
+                    try { localStorage.setItem(cacheKey, text); } catch { /* noop */ }
+                    return text;
+                }
+            }
+        } catch { /* try next endpoint */ }
+    }
+    
+    throw new Error('All translation endpoints failed');
 }
 
 async function enrichFromDictionary(word: string): Promise<Partial<Word>> {

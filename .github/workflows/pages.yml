@@ -91,8 +91,11 @@ jobs:
       - name: Generate static word list (free, no backend)
         run: |
           python3 -m pip install --upgrade pip
-          pip install wordfreq
+          pip install wordfreq requests
           python3 pages_generate_words.py
+          # Note: words_translated.json generation takes hours (20k words * 10 langs)
+          # Run manually: python3 pages_generate_translated_words.py
+          # Or schedule via GitHub Actions cron if needed
 
       - name: Build static site
         run: |
