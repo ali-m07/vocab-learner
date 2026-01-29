@@ -79,49 +79,29 @@ function hasBackendConfigured(): boolean {
     return !!API_BASE;
 }
 
+function updateBackendUiVisibility(): void {
+    const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement | null;
+    const createAnkiBtn = document.getElementById('createAnkiBtn') as HTMLButtonElement | null;
+    const dailyReviewBtn = document.getElementById('dailyReviewBtn') as HTMLButtonElement | null;
+
+    const show = hasBackendConfigured();
+    // On free/offline mode (Pages), hide backend-only features.
+    if (downloadBtn) downloadBtn.style.display = show ? '' : 'none';
+    if (createAnkiBtn) createAnkiBtn.style.display = show ? '' : 'none';
+    if (dailyReviewBtn) dailyReviewBtn.style.display = show ? '' : 'none';
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLanguages();
     loadStats();
     loadWords();
     setupEventListeners();
+    updateBackendUiVisibility();
 });
 
 // Event Listeners
 function setupEventListeners(): void {
-    // Backend URL settings (for GitHub Pages / separate backend)
-    const apiBaseInput = document.getElementById('apiBaseInput') as HTMLInputElement | null;
-    const apiBaseSaveBtn = document.getElementById('apiBaseSaveBtn') as HTMLButtonElement | null;
-    const apiBaseClearBtn = document.getElementById('apiBaseClearBtn') as HTMLButtonElement | null;
-
-    if (apiBaseInput) {
-        apiBaseInput.value = API_BASE;
-    }
-    if (apiBaseSaveBtn) {
-        apiBaseSaveBtn.addEventListener('click', () => {
-            const value = (apiBaseInput?.value || '').trim().replace(/\/+$/, '');
-            try { localStorage.setItem('apiBase', value); } catch { /* noop */ }
-            API_BASE = value;
-            showToast(value ? `Backend set to: ${value}` : 'Using same-origin backend', 'success');
-            state.currentPage = 1;
-            loadLanguages();
-            loadStats();
-            loadWords();
-        });
-    }
-    if (apiBaseClearBtn) {
-        apiBaseClearBtn.addEventListener('click', () => {
-            try { localStorage.removeItem('apiBase'); } catch { /* noop */ }
-            API_BASE = '';
-            if (apiBaseInput) apiBaseInput.value = '';
-            showToast('Backend cleared. Using same-origin backend.', 'success');
-            state.currentPage = 1;
-            loadLanguages();
-            loadStats();
-            loadWords();
-        });
-    }
-
     // Download button
     const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement;
     if (downloadBtn) {

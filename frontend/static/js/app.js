@@ -48,53 +48,29 @@ function isOfflineMode() {
 function hasBackendConfigured() {
     return !!API_BASE;
 }
+function updateBackendUiVisibility() {
+    const downloadBtn = document.getElementById('downloadBtn');
+    const createAnkiBtn = document.getElementById('createAnkiBtn');
+    const dailyReviewBtn = document.getElementById('dailyReviewBtn');
+    const show = hasBackendConfigured();
+    // On free/offline mode (Pages), hide backend-only features.
+    if (downloadBtn)
+        downloadBtn.style.display = show ? '' : 'none';
+    if (createAnkiBtn)
+        createAnkiBtn.style.display = show ? '' : 'none';
+    if (dailyReviewBtn)
+        dailyReviewBtn.style.display = show ? '' : 'none';
+}
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLanguages();
     loadStats();
     loadWords();
     setupEventListeners();
+    updateBackendUiVisibility();
 });
 // Event Listeners
 function setupEventListeners() {
-    // Backend URL settings (for GitHub Pages / separate backend)
-    const apiBaseInput = document.getElementById('apiBaseInput');
-    const apiBaseSaveBtn = document.getElementById('apiBaseSaveBtn');
-    const apiBaseClearBtn = document.getElementById('apiBaseClearBtn');
-    if (apiBaseInput) {
-        apiBaseInput.value = API_BASE;
-    }
-    if (apiBaseSaveBtn) {
-        apiBaseSaveBtn.addEventListener('click', () => {
-            const value = (apiBaseInput?.value || '').trim().replace(/\/+$/, '');
-            try {
-                localStorage.setItem('apiBase', value);
-            }
-            catch { /* noop */ }
-            API_BASE = value;
-            showToast(value ? `Backend set to: ${value}` : 'Using same-origin backend', 'success');
-            state.currentPage = 1;
-            loadLanguages();
-            loadStats();
-            loadWords();
-        });
-    }
-    if (apiBaseClearBtn) {
-        apiBaseClearBtn.addEventListener('click', () => {
-            try {
-                localStorage.removeItem('apiBase');
-            }
-            catch { /* noop */ }
-            API_BASE = '';
-            if (apiBaseInput)
-                apiBaseInput.value = '';
-            showToast('Backend cleared. Using same-origin backend.', 'success');
-            state.currentPage = 1;
-            loadLanguages();
-            loadStats();
-            loadWords();
-        });
-    }
     // Download button
     const downloadBtn = document.getElementById('downloadBtn');
     if (downloadBtn) {
