@@ -1,0 +1,13 @@
+apiVersion: v2
+name: vocab-learner
+description: A Helm chart for Vocabulary Learning Application
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - vocabulary
+  - learning
+  - english
+  - education
+maintainers:
+  - name: Ali
