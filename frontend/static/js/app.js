@@ -45,6 +45,9 @@ function isOfflineMode() {
     // If API_BASE is empty and server endpoints are not reachable, we fall back to static words.json
     return offlineWords !== null;
 }
+function hasBackendConfigured() {
+    return !!API_BASE;
+}
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLanguages();
@@ -206,6 +209,34 @@ function setupEventListeners() {
 }
 // Load Languages
 async function loadLanguages() {
+    // Offline/Pages mode: do not call backend, just use a small built-in list.
+    if (!hasBackendConfigured()) {
+        state.languages = {
+            en: 'English',
+            es: 'Spanish',
+            fr: 'French',
+            de: 'German',
+            it: 'Italian',
+            pt: 'Portuguese',
+            ru: 'Russian',
+            ar: 'Arabic',
+            tr: 'Turkish',
+            hi: 'Hindi',
+            fa: 'Persian',
+            ja: 'Japanese',
+            ko: 'Korean',
+            zh: 'Chinese',
+        };
+        const browserLang = guessLanguageCode();
+        state.selectedLanguage = state.languages[browserLang] ? browserLang : 'en';
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+            languageSelect.innerHTML = Object.entries(state.languages)
+                .map(([code, name]) => `<option value="${code}" ${code === state.selectedLanguage ? 'selected' : ''}>${name}</option>`)
+                .join('');
+        }
+        return;
+    }
     try {
         const response = await fetch(`${API_BASE}/api/languages`);
         const data = await response.json();
@@ -566,6 +597,10 @@ async function handleDownload() {
     const btn = document.getElementById('downloadBtn');
     if (!btn)
         return;
+    if (!hasBackendConfigured()) {
+        showToast('Offline mode: connect a backend URL to download/translate the dataset.', 'error');
+        return;
+    }
     const originalText = btn.innerHTML;
     const includeDetails = document.getElementById('includeDetails')?.checked ?? true;
     btn.disabled = true;
@@ -604,6 +639,10 @@ async function handleCreateAnki() {
     const btn = document.getElementById('createAnkiBtn');
     if (!btn)
         return;
+    if (!hasBackendConfigured()) {
+        showToast('Offline mode: connect a backend URL to create Anki decks.', 'error');
+        return;
+    }
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-icon">⏳</span> Creating...';
@@ -641,6 +680,10 @@ async function loadDailyWords() {
     const container = document.getElementById('dailyWords');
     if (!container)
         return;
+    if (!hasBackendConfigured()) {
+        container.innerHTML = `<p style="color: var(--text-secondary);">Offline mode: connect a backend URL to use Daily Review.</p>`;
+        return;
+    }
     const countInput = document.getElementById('dailyCount');
     const count = parseInt(countInput?.value || '50', 10);
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';

@@ -75,6 +75,10 @@ function isOfflineMode(): boolean {
     return offlineWords !== null;
 }
 
+function hasBackendConfigured(): boolean {
+    return !!API_BASE;
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadLanguages();
@@ -248,6 +252,34 @@ function setupEventListeners(): void {
 
 // Load Languages
 async function loadLanguages(): Promise<void> {
+    // Offline/Pages mode: do not call backend, just use a small built-in list.
+    if (!hasBackendConfigured()) {
+        state.languages = {
+            en: 'English',
+            es: 'Spanish',
+            fr: 'French',
+            de: 'German',
+            it: 'Italian',
+            pt: 'Portuguese',
+            ru: 'Russian',
+            ar: 'Arabic',
+            tr: 'Turkish',
+            hi: 'Hindi',
+            fa: 'Persian',
+            ja: 'Japanese',
+            ko: 'Korean',
+            zh: 'Chinese',
+        };
+        const browserLang = guessLanguageCode();
+        state.selectedLanguage = state.languages[browserLang] ? browserLang : 'en';
+        const languageSelect = document.getElementById('languageSelect') as HTMLSelectElement;
+        if (languageSelect) {
+            languageSelect.innerHTML = Object.entries(state.languages)
+                .map(([code, name]) => `<option value="${code}" ${code === state.selectedLanguage ? 'selected' : ''}>${name}</option>`)
+                .join('');
+        }
+        return;
+    }
     try {
         const response = await fetch(`${API_BASE}/api/languages`);
         const data = await response.json();
@@ -624,6 +656,10 @@ function flipCard(card: HTMLElement): void {
 async function handleDownload(): Promise<void> {
     const btn = document.getElementById('downloadBtn') as HTMLButtonElement;
     if (!btn) return;
+    if (!hasBackendConfigured()) {
+        showToast('Offline mode: connect a backend URL to download/translate the dataset.', 'error');
+        return;
+    }
     
     const originalText = btn.innerHTML;
     const includeDetails = (document.getElementById('includeDetails') as HTMLInputElement)?.checked ?? true;
@@ -664,6 +700,10 @@ async function handleDownload(): Promise<void> {
 async function handleCreateAnki(): Promise<void> {
     const btn = document.getElementById('createAnkiBtn') as HTMLButtonElement;
     if (!btn) return;
+    if (!hasBackendConfigured()) {
+        showToast('Offline mode: connect a backend URL to create Anki decks.', 'error');
+        return;
+    }
     
     const originalText = btn.innerHTML;
     
@@ -704,6 +744,10 @@ async function handleCreateAnki(): Promise<void> {
 async function loadDailyWords(): Promise<void> {
     const container = document.getElementById('dailyWords');
     if (!container) return;
+    if (!hasBackendConfigured()) {
+        container.innerHTML = `<p style="color: var(--text-secondary);">Offline mode: connect a backend URL to use Daily Review.</p>`;
+        return;
+    }
     
     const countInput = document.getElementById('dailyCount') as HTMLInputElement;
     const count = parseInt(countInput?.value || '50', 10);
