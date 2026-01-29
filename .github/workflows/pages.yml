@@ -106,6 +106,10 @@ jobs:
           ls -la _site/static/ || echo "❌ _site/static not found"
           ls -la _site/static/css/ || echo "❌ _site/static/css not found"
           ls -la _site/static/js/ || echo "❌ _site/static/js not found"
+          # Ensure all required files exist
+          test -f _site/static/css/style.css && echo "✅ CSS file exists" || echo "❌ CSS file missing"
+          test -f _site/static/js/app.js && echo "✅ JS file exists" || echo "❌ JS file missing"
+          test -f _site/static/data/words.json && echo "✅ words.json exists" || echo "❌ words.json missing"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
