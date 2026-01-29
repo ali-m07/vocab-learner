@@ -3,141 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocabulary Learner | Learn English Words</title>
+    <title>Vocabulary Learner</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Times+New+Roman&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <div class="header-content">
-                <div class="logo-section">
-                    <h1 class="logo">📚 Vocabulary Learner</h1>
-                    <p class="tagline">Master English words with ease</p>
-                </div>
-                <div class="stats-bar" id="statsBar">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Words</span>
-                        <span class="stat-value" id="totalWords">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Translated</span>
-                        <span class="stat-value" id="translatedWords">0</span>
-                    </div>
-                </div>
-            </div>
+            <h1 class="title">Vocabulary Learner</h1>
+            <p class="subtitle">Learn words with translation and real usage examples</p>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Control Panel -->
-            <section class="control-panel">
-                <div class="panel-card">
-                    <h2>🎯 Control Panel</h2>
-                    <div class="control-group">
-                        <div class="form-group">
-                            <label for="languageSelect">Target Language:</label>
-                            <select id="languageSelect" class="select-input">
-                                <option value="fa">Persian</option>
-                            </select>
-                        </div>
-                        <div class="form-group checkbox-group">
-                            <label for="includeDetails">
-                                <input type="checkbox" id="includeDetails" checked>
-                                Include word details (definition, type, examples)
-                            </label>
-                        </div>
-                    </div>
-                    <div class="button-group">
-                        <button class="btn btn-primary" id="downloadBtn">
-                            <span class="btn-icon">📥</span>
-                            Download & Translate Dataset
-                        </button>
-                        <button class="btn btn-success" id="createAnkiBtn">
-                            <span class="btn-icon">🃏</span>
-                            Create Anki Deck
-                        </button>
-                        <button class="btn btn-info" id="dailyReviewBtn">
-                            <span class="btn-icon">📖</span>
-                            Daily Review
-                        </button>
-                    </div>
-                </div>
-            </section>
+        <!-- Statistics -->
+        <div class="stats-section">
+            <div class="stat-item">
+                <span>Total Words <span id="totalWords">0</span></span>
+            </div>
+            <div class="stat-item">
+                <span>Translated <span id="translatedWords">0</span></span>
+            </div>
+        </div>
 
-            <!-- Search and Filter Section -->
-            <section class="search-section">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search words..." class="search-input">
-                    <button class="search-btn" id="searchBtn">🔍</button>
-                </div>
-                <div class="filter-group">
-                    <label for="wordTypeFilter">Filter by type:</label>
-                    <select id="wordTypeFilter" class="select-input">
-                        <option value="">All Types</option>
-                        <option value="noun">Noun</option>
-                        <option value="verb">Verb</option>
-                        <option value="adjective">Adjective</option>
-                        <option value="adverb">Adverb</option>
-                        <option value="pronoun">Pronoun</option>
-                        <option value="preposition">Preposition</option>
-                        <option value="conjunction">Conjunction</option>
-                        <option value="interjection">Interjection</option>
+        <!-- Control Panel -->
+        <section class="control-panel">
+            <h2 class="section-title">Control Panel</h2>
+            <div class="control-group">
+                <div class="form-row">
+                    <label for="languageSelect">Target Language:</label>
+                    <select id="languageSelect" class="select-input">
+                        <option value="en">English</option>
                     </select>
                 </div>
-            </section>
-
-            <!-- Words Display -->
-            <section class="words-section">
-                <div class="section-header">
-                    <h2>📝 Vocabulary List</h2>
-                    <div class="pagination-controls">
-                        <button class="btn-icon-only" id="firstPage" title="First page">«</button>
-                        <button class="btn-icon-only" id="prevPage" title="Previous page">‹</button>
-                        <div class="page-numbers" id="pageNumbers"></div>
-                        <button class="btn-icon-only" id="nextPage" title="Next page">›</button>
-                        <button class="btn-icon-only" id="lastPage" title="Last page">»</button>
-                        <span class="page-info" id="pageInfo">Page 1 of 1</span>
-                    </div>
-                </div>
-                
-                <div class="words-grid" id="wordsGrid">
-                    <div class="loading" id="loading">
-                        <div class="spinner"></div>
-                        <p>Loading...</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Daily Review Modal -->
-            <div class="modal" id="dailyModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2>📖 Daily Review</h2>
-                        <button class="close-btn" id="closeModal">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="daily-controls">
-                            <label>Number of words:</label>
-                            <input type="number" id="dailyCount" value="50" min="1" max="200" class="number-input">
-                            <button class="btn btn-primary" id="loadDailyBtn">Load</button>
-                        </div>
-                        <div class="daily-words" id="dailyWords"></div>
-                    </div>
+                <div class="form-row checkbox-row">
+                    <label for="includeDetails">
+                        <input type="checkbox" id="includeDetails" checked>
+                        Include word details (definition, type, examples)
+                    </label>
                 </div>
             </div>
-        </main>
+            <div class="button-group">
+                <button class="btn btn-download" id="downloadBtn">
+                    <span class="btn-icon">⬇</span>
+                    Download & Translate Dataset
+                </button>
+                <button class="btn btn-anki" id="createAnkiBtn">
+                    <span class="btn-icon">🃏</span>
+                    Create Anki Deck
+                </button>
+                <button class="btn btn-review" id="dailyReviewBtn">
+                    <span class="btn-icon">📖</span>
+                    Daily Review
+                </button>
+            </div>
+            <div class="search-row">
+                <input type="text" id="searchInput" placeholder="Search words..." class="search-input">
+                <button class="btn btn-search" id="searchBtn">Search</button>
+            </div>
+            <div class="form-row">
+                <label for="wordTypeFilter">Filter by type:</label>
+                <select id="wordTypeFilter" class="select-input">
+                    <option value="">All Types</option>
+                    <option value="noun">Noun</option>
+                    <option value="verb">Verb</option>
+                    <option value="adjective">Adjective</option>
+                    <option value="adverb">Adverb</option>
+                    <option value="pronoun">Pronoun</option>
+                    <option value="preposition">Preposition</option>
+                    <option value="conjunction">Conjunction</option>
+                    <option value="interjection">Interjection</option>
+                </select>
+            </div>
+        </section>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <p>Built with ❤️ for better learning</p>
-            <p class="footer-author">
-                Provided by <a href="https://ali-m07.github.io/resume/" target="_blank" rel="noopener noreferrer">Ali Mansouri</a>
-            </p>
-        </footer>
+        <!-- Vocabulary List -->
+        <section class="vocabulary-section">
+            <h2 class="section-title">Vocabulary List</h2>
+            <div class="words-grid" id="wordsGrid">
+                <div class="loading" id="loading">
+                    <p>Loading...</p>
+                </div>
+            </div>
+            <div class="pagination-controls">
+                <button class="btn-icon-only" id="firstPage" title="First page">«</button>
+                <button class="btn-icon-only" id="prevPage" title="Previous page">‹</button>
+                <div class="page-numbers" id="pageNumbers"></div>
+                <button class="btn-icon-only" id="nextPage" title="Next page">›</button>
+                <button class="btn-icon-only" id="lastPage" title="Last page">»</button>
+                <span class="page-info" id="pageInfo">Page 1 of 1</span>
+            </div>
+        </section>
+
+        <!-- Daily Review Modal -->
+        <div class="modal" id="dailyModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Daily Review</h2>
+                    <button class="close-btn" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="daily-controls">
+                        <label>Number of words:</label>
+                        <input type="number" id="dailyCount" value="50" min="1" max="200" class="number-input">
+                        <button class="btn btn-primary" id="loadDailyBtn">Load</button>
+                    </div>
+                    <div class="daily-words" id="dailyWords"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast Notification -->
