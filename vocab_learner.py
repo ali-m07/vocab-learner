@@ -7,7 +7,7 @@ Download dataset, translate to target language, and create Anki deck
 
 import kagglehub
 import pandas as pd
-from deep_translator import GoogleTranslator
+from googletrans import Translator
 from pathlib import Path
 import genanki
 import time
@@ -21,7 +21,7 @@ class VocabularyLearner:
         self.dataset_path = None
         self.words_df = None
         self.target_language = target_language
-        self.translator = GoogleTranslator(source='en', target=target_language)
+        self.translator = Translator()
         
     def download_dataset(self):
         """Download dataset from Kaggle"""
@@ -164,8 +164,14 @@ class VocabularyLearner:
             
             for retry in range(max_retries):
                 try:
-                    # Translate with retry
-                    translation = self.translator.translate(word)
+                    # Small delay between requests to avoid rate limiting (Google Translate is free but has limits)
+                    if idx > 1:
+                        time.sleep(0.2)  # 200ms delay between requests
+                    
+                    # Translate with retry using Google Translate directly (free, no API key needed)
+                    result = self.translator.translate(word, src='en', dest=self.target_language)
+                    translation = result.text if result and result.text else ""
+                    
                     if translation and translation.strip():
                         translations.append(translation)
                         translation_success = True
@@ -177,12 +183,12 @@ class VocabularyLearner:
                     error_msg = str(e).lower()
                     if retry < max_retries - 1:
                         # Check if it's a rate limit or service error
-                        if '429' in error_msg or 'rate limit' in error_msg or 'quota' in error_msg:
+                        if '429' in error_msg or 'rate limit' in error_msg or 'quota' in error_msg or 'too many requests' in error_msg:
                             wait_time = retry_delay * (retry + 1)
                             print(f"⏳ Rate limit hit. Waiting {wait_time}s before retry {retry + 1}/{max_retries}...")
                             time.sleep(wait_time)
                             continue
-                        elif 'service unavailable' in error_msg or '503' in error_msg or '502' in error_msg:
+                        elif 'service unavailable' in error_msg or '503' in error_msg or '502' in error_msg or 'timed out' in error_msg:
                             wait_time = retry_delay * (retry + 1)
                             print(f"⏳ Service unavailable. Waiting {wait_time}s before retry {retry + 1}/{max_retries}...")
                             time.sleep(wait_time)
@@ -224,9 +230,10 @@ class VocabularyLearner:
                 translated_count = sum(1 for t in translations if t)
                 print(f"📊 Progress: {idx}/{total} ({idx*100//total}%) | Translated: {translated_count}/{idx}")
             
-            # Delay to prevent rate limiting
+            # Additional delay every batch to prevent rate limiting (Google Translate free tier)
             if idx % batch_size == 0:
                 time.sleep(delay)
+                print(f"⏸️  Pausing {delay}s after {idx} words to avoid rate limits...")
         
         self.words_df['translation'] = translations
         if include_details:
