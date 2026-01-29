@@ -360,7 +360,7 @@ async function loadWords(page: number = state.currentPage): Promise<void> {
                 if (translatedResp && translatedResp.ok) {
                     const translatedData = await translatedResp.json() as { words: any[] };
                     const lang = state.selectedLanguage || guessLanguageCode();
-                    offlineWords = (translatedData.words || []).map((w: any) => ({
+                    const preTranslated = (translatedData.words || []).map((w: any) => ({
                         word: w.word || '',
                         translation: w.translations?.[lang] || '',
                         definition: w.definition || '',
@@ -368,6 +368,24 @@ async function loadWords(page: number = state.currentPage): Promise<void> {
                         examples: w.examples || [],
                         pronunciation: w.pronunciation || '',
                     }));
+                    
+                    // Load remaining words from plain list and merge
+                    try {
+                        const plainResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                        const plainData = (await plainResp.json()) as OfflineWordsPayload;
+                        const plainWords = (plainData.words || []).map((w) => ({ word: w }));
+                        
+                        // Create a map of pre-translated words
+                        const translatedMap = new Map(preTranslated.map(w => [w.word.toLowerCase(), w]));
+                        
+                        // Merge: use pre-translated if available, otherwise plain
+                        offlineWords = plainWords.map(w => {
+                            const translated = translatedMap.get(w.word.toLowerCase());
+                            return translated || w;
+                        });
+                    } catch {
+                        offlineWords = preTranslated;
+                    }
                 } else {
                     // Fallback to plain word list
                     const offlineResp = await fetch('static/data/words.json', { cache: 'no-cache' });

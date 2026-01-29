@@ -307,7 +307,7 @@ async function loadWords(page = state.currentPage) {
                 if (translatedResp && translatedResp.ok) {
                     const translatedData = await translatedResp.json();
                     const lang = state.selectedLanguage || guessLanguageCode();
-                    offlineWords = (translatedData.words || []).map((w) => ({
+                    const preTranslated = (translatedData.words || []).map((w) => ({
                         word: w.word || '',
                         translation: w.translations?.[lang] || '',
                         definition: w.definition || '',
@@ -315,6 +315,22 @@ async function loadWords(page = state.currentPage) {
                         examples: w.examples || [],
                         pronunciation: w.pronunciation || '',
                     }));
+                    // Load remaining words from plain list and merge
+                    try {
+                        const plainResp = await fetch('static/data/words.json', { cache: 'no-cache' });
+                        const plainData = (await plainResp.json());
+                        const plainWords = (plainData.words || []).map((w) => ({ word: w }));
+                        // Create a map of pre-translated words
+                        const translatedMap = new Map(preTranslated.map(w => [w.word.toLowerCase(), w]));
+                        // Merge: use pre-translated if available, otherwise plain
+                        offlineWords = plainWords.map(w => {
+                            const translated = translatedMap.get(w.word.toLowerCase());
+                            return translated || w;
+                        });
+                    }
+                    catch {
+                        offlineWords = preTranslated;
+                    }
                 }
                 else {
                     // Fallback to plain word list
@@ -380,7 +396,7 @@ function createWordCard(word) {
                 ${word.pronunciation ? `<div class="word-pronunciation">${escapeHtml(word.pronunciation)}</div>` : ''}
             </div>
             <div class="word-back">
-                <div class="word-translation">${escapeHtml(word.translation || (isOfflineMode() ? 'Translation not loaded' : 'No translation'))}</div>
+                <div class="word-translation">${escapeHtml(word.translation || 'Click Translate')}</div>
                 ${!word.translation ? `<button class="btn btn-primary btn-translate" data-word="${escapeHtml(word.word)}" onclick="event.stopPropagation(); window.__translateWord?.('${escapeHtml(word.word)}');">Translate</button>` : ''}
                 ${word.word_type ? `<div class="word-type-badge">${escapeHtml(word.word_type)}</div>` : ''}
                 ${word.definition ? `<div class="word-definition">${escapeHtml(word.definition)}</div>` : ''}
