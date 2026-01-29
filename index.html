@@ -36,37 +36,33 @@
       <main class="main-content">
         <section class="control-panel">
           <div class="panel-card">
-            <h2>Control Panel</h2>
-            <p style="color: var(--text-secondary); margin-top: 6px">
-              This GitHub Pages site is a <strong>static demo</strong>. For full features (download, translate,
-              Anki export), run the backend with <code>python backend/app.py</code>.
+            <h2>Learn vocabulary with a modern UI</h2>
+            <p style="color: var(--text-secondary); margin-top: 8px; max-width: 70ch">
+              GitHub Pages can only host static files. To get translations in your language and usage examples,
+              run the backend locally or deploy it (Docker/Kubernetes).
             </p>
-          </div>
-        </section>
 
-        <section class="search-section">
-          <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search words..." class="search-input" />
-            <button class="search-btn" id="searchBtn" aria-label="Search">Search</button>
-          </div>
-          <div class="filter-group">
-            <label for="wordTypeFilter">Filter by type:</label>
-            <select id="wordTypeFilter" class="select-input">
-              <option value="">All</option>
-              <option value="noun">Noun</option>
-              <option value="verb">Verb</option>
-              <option value="adjective">Adjective</option>
-              <option value="adverb">Adverb</option>
-            </select>
+            <div class="button-group" style="margin-top: 16px">
+              <a class="btn btn-primary" href="README.md">Read the setup</a>
+              <a class="btn btn-info" href="GITHUB_PAGES.md">Pages guide</a>
+              <a class="btn btn-success" href="DEPLOY.md">Deploy backend</a>
+            </div>
           </div>
         </section>
 
         <section class="words-section">
-          <div class="section-header">
-            <h2>Vocabulary List</h2>
-            <span class="page-info" id="pageInfo">Demo dataset</span>
+          <div class="panel-card" style="animation: pop 420ms ease-out both">
+            <h3 style="margin-bottom: 8px">App sections</h3>
+            <ul style="color: var(--text-secondary); padding-left: 18px; display: grid; gap: 6px">
+              <li><strong>Learn</strong> — daily words and review flow</li>
+              <li><strong>Search</strong> — search/filter words + examples (where the word is used)</li>
+              <li><strong>Anki</strong> — export deck for spaced repetition</li>
+              <li><strong>Settings</strong> — pick your language (auto-selected from your browser)</li>
+            </ul>
+            <p style="color: var(--text-secondary); margin-top: 10px">
+              Open the full app by running <code>python backend/app.py</code>.
+            </p>
           </div>
-          <div class="words-grid" id="wordsGrid"></div>
         </section>
       </main>
 
@@ -76,7 +72,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="frontend/static/js/pages-demo.js"></script>
   </body>
 </html>
 

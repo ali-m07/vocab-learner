@@ -1,6 +1,12 @@
 // API Base URL
 const API_BASE = '';
 
+function guessLanguageCode(): string {
+    const navLang = (navigator.language || '').toLowerCase(); // e.g. "fr-fr"
+    const code = navLang.split('-')[0] || '';
+    return code || 'en';
+}
+
 // Types
 interface Word {
     word: string;
@@ -34,7 +40,7 @@ class AppState {
     currentPage: number = 1;
     totalPages: number = 1;
     currentSearch: string = '';
-    selectedLanguage: string = 'fa';
+    selectedLanguage: string = guessLanguageCode();
     selectedWordType: string = '';
     words: Word[] = [];
     stats: Stats = { total_words: 0, translated_words: 0, vocab_file_exists: false };
@@ -188,7 +194,9 @@ async function loadLanguages(): Promise<void> {
         const response = await fetch(`${API_BASE}/api/languages`);
         const data = await response.json();
         state.languages = data.languages;
-        state.selectedLanguage = data.default || 'fa';
+        // Prefer browser language when supported, otherwise server default, otherwise English.
+        const browserLang = guessLanguageCode();
+        state.selectedLanguage = state.languages?.[browserLang] ? browserLang : (data.default || 'en');
         
         // Populate language select
         const languageSelect = document.getElementById('languageSelect') as HTMLSelectElement;

@@ -1,13 +1,18 @@
 "use strict";
 // API Base URL
 const API_BASE = '';
+function guessLanguageCode() {
+    const navLang = (navigator.language || '').toLowerCase(); // e.g. "fr-fr"
+    const code = navLang.split('-')[0] || '';
+    return code || 'en';
+}
 // State
 class AppState {
     constructor() {
         this.currentPage = 1;
         this.totalPages = 1;
         this.currentSearch = '';
-        this.selectedLanguage = 'fa';
+        this.selectedLanguage = guessLanguageCode();
         this.selectedWordType = '';
         this.words = [];
         this.stats = { total_words: 0, translated_words: 0, vocab_file_exists: false };
@@ -143,7 +148,9 @@ async function loadLanguages() {
         const response = await fetch(`${API_BASE}/api/languages`);
         const data = await response.json();
         state.languages = data.languages;
-        state.selectedLanguage = data.default || 'fa';
+        // Prefer browser language when supported, otherwise server default, otherwise English.
+        const browserLang = guessLanguageCode();
+        state.selectedLanguage = state.languages?.[browserLang] ? browserLang : (data.default || 'en');
         // Populate language select
         const languageSelect = document.getElementById('languageSelect');
         if (languageSelect) {

@@ -84,9 +84,21 @@ def health():
 @app.route('/api/languages')
 def get_languages():
     """Get supported languages"""
+    # Try to pick a sensible default based on browser language
+    # (e.g. "fr-FR" -> "fr"), falling back to English.
+    default_lang = "en"
+    try:
+        header = request.headers.get("Accept-Language", "")
+        if header:
+            first = header.split(",")[0].strip()
+            code = first.split("-")[0].lower()
+            if code in SUPPORTED_LANGUAGES:
+                default_lang = code
+    except Exception:
+        pass
     return jsonify({
         "languages": SUPPORTED_LANGUAGES,
-        "default": "fa"
+        "default": default_lang
     })
 
 @app.route('/api/stats')
@@ -224,12 +236,18 @@ def download_dataset():
     try:
         data = request.json or {}
         target_language = data.get('target_language', 'fa')
+        dataset_name = data.get('dataset_name')  # optional
+        max_words = data.get('max_words')        # optional
         include_details = data.get('include_details', True)
         
         if target_language not in SUPPORTED_LANGUAGES:
             return jsonify({"success": False, "error": f"Language '{target_language}' not supported"}), 400
         
-        learner = VocabularyLearner(target_language=target_language)
+        learner = VocabularyLearner(
+            target_language=target_language,
+            dataset_name=dataset_name or "yk1598/479k-english-words",
+            max_words=int(max_words) if max_words else 20000,
+        )
         learner.download_dataset()
         learner.load_words()
         learner.translate_words(include_details=include_details)
