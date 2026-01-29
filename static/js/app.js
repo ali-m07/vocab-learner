@@ -374,6 +374,12 @@ async function handleDownload() {
                 include_details: includeDetails
             })
         });
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Server returned HTML instead of JSON. Make sure Flask server is running. Status: ${response.status}`);
+        }
         const data = await response.json();
         if (data.success) {
             showToast(data.message, 'success');
@@ -381,7 +387,23 @@ async function handleDownload() {
             setTimeout(() => loadWords(), 1000);
         }
         else {
-            showToast(data.error || 'Download error', 'error');
+            let errorMsg = data.error || 'Download error';
+            // Provide helpful messages for common errors
+            if (errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+                errorMsg = 'Translation service rate limit exceeded. Please wait 5-10 minutes and try again.';
+            }
+            else if (errorMsg.includes('service unavailable') || errorMsg.includes('503') || errorMsg.includes('502')) {
+                errorMsg = 'Translation service is temporarily unavailable. Please try again in a few minutes.';
+            }
+            else if (errorMsg.includes('partially completed')) {
+                errorMsg = errorMsg + ' Some words were translated successfully.';
+            }
+            showToast(errorMsg, 'error');
+            // If partial success, reload stats and words
+            if (data.partial_success) {
+                loadStats();
+                setTimeout(() => loadWords(), 1000);
+            }
         }
     }
     catch (error) {
