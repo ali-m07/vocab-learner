@@ -246,3 +246,29 @@ kubectl logs <pod-name> --previous
 4. ✅ Configure CI/CD
 5. ✅ Add Monitoring
 6. ✅ Add Authentication (optional)
+
+## Deploy the Backend for GitHub Pages (Recommended)
+
+GitHub Pages cannot run the Python backend. To make the GitHub Pages UI work, deploy the backend and then set the backend URL in the UI (or use `?api=...`).
+
+### Option A: Render (Docker)
+
+1. Push this repository to GitHub (already done)
+2. In Render, create a new **Web Service** from this repo
+3. Render will detect `render.yaml` and deploy automatically
+4. When you get a URL like `https://your-service.onrender.com`, open:
+
+`https://ali-m07.github.io/vocab-learner/?api=https://your-service.onrender.com`
+
+### Option B: Fly.io (Docker)
+
+1. Install Fly CLI
+2. Login: `fly auth login`
+3. From the repo root:
+
+```bash
+fly launch --no-deploy
+fly deploy
+```
+
+4. Use the Fly URL in GitHub Pages via the `?api=` parameter.

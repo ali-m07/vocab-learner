@@ -19,8 +19,9 @@ COPY frontend/ ./frontend/
 RUN mkdir -p /app/data /app/uploads
 
 # Port
-EXPOSE 5000
+EXPOSE 8080
 
 # Run application
 WORKDIR /app
-CMD ["python", "backend/app.py"]
+ENV PORT=8080
+CMD ["sh", "-c", "gunicorn -b 0.0.0.0:${PORT} backend.app:app"]
