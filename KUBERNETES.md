@@ -1,20 +1,20 @@
-# Kubernetes Deployment Guide
+# راهنمای استقرار در Kubernetes
 
-## Prerequisites
+## پیش‌نیازها
 
 - Kubernetes cluster (v1.19+)
 - Helm 3.x
 - kubectl configured
 
-## Installation with Helm
+## نصب با Helm
 
-### Simple Installation
+### نصب ساده
 
 ```bash
 helm install vocab-learner ./helm/vocab-learner
 ```
 
-### Installation with Custom Settings
+### نصب با تنظیمات سفارشی
 
 ```bash
 helm install vocab-learner ./helm/vocab-learner \
@@ -24,10 +24,10 @@ helm install vocab-learner ./helm/vocab-learner \
   --set persistence.size=10Gi
 ```
 
-### Using Custom Values File
+### استفاده از فایل values سفارشی
 
 ```bash
-# Create values-custom.yaml file
+# ایجاد فایل values-custom.yaml
 cat > values-custom.yaml <<EOF
 replicaCount: 2
 resources:
@@ -47,19 +47,19 @@ EOF
 helm install vocab-learner ./helm/vocab-learner -f values-custom.yaml
 ```
 
-## Update
+## آپدیت
 
 ```bash
 helm upgrade vocab-learner ./helm/vocab-learner
 ```
 
-## Uninstall
+## حذف
 
 ```bash
 helm uninstall vocab-learner
 ```
 
-## Access the Application
+## دسترسی به اپلیکیشن
 
 ### Port Forward
 
@@ -67,14 +67,14 @@ helm uninstall vocab-learner
 kubectl port-forward svc/vocab-learner 5000:5000
 ```
 
-Then go to `http://localhost:5000`.
+سپس به `http://localhost:5000` بروید.
 
 ### Ingress
 
-If Ingress is enabled:
+اگر Ingress فعال باشد:
 
 ```bash
-# Enable Ingress in values.yaml
+# فعال کردن Ingress در values.yaml
 ingress:
   enabled: true
   hosts:
@@ -83,23 +83,23 @@ ingress:
         - path: /
 ```
 
-Then configure your DNS to point to the Ingress controller.
+سپس DNS خود را به Ingress controller تنظیم کنید.
 
 ## Monitoring
 
-### Check Pods
+### بررسی Pods
 
 ```bash
 kubectl get pods -l app.kubernetes.io/name=vocab-learner
 ```
 
-### Check Logs
+### بررسی Logs
 
 ```bash
 kubectl logs -l app.kubernetes.io/name=vocab-learner -f
 ```
 
-### Check Services
+### بررسی Services
 
 ```bash
 kubectl get svc vocab-learner
@@ -107,27 +107,27 @@ kubectl get svc vocab-learner
 
 ## Troubleshooting
 
-### Pod Crashing
+### Pod در حال Crash
 
 ```bash
 kubectl describe pod <pod-name>
 kubectl logs <pod-name>
 ```
 
-### Persistent Volume Issues
+### مشکل در Persistent Volume
 
 ```bash
 kubectl get pvc
 kubectl describe pvc vocab-learner-data
 ```
 
-### Health Check Issues
+### مشکل در Health Check
 
 ```bash
 kubectl exec -it <pod-name> -- curl http://localhost:5000/health
 ```
 
-## Advanced Settings
+## تنظیمات پیشرفته
 
 ### Auto-scaling
 

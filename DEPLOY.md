@@ -1,78 +1,78 @@
-# Deployment Guide
+# راهنمای استقرار و Push
 
-## Preparation for Push
+## آماده‌سازی برای Push
 
-### 1. Check Files
+### 1. بررسی فایل‌ها
 
 ```bash
-# Check project structure
+# بررسی ساختار پروژه
 ls -la
 
-# Check important files
+# بررسی فایل‌های مهم
 cat requirements.txt
 cat Dockerfile
 cat docker-compose.yml
 ```
 
-### 2. Local Testing
+### 2. تست محلی
 
 ```bash
-# Install dependencies
+# نصب وابستگی‌ها
 make install
-# or
+# یا
 pip install -r requirements.txt
 
-# Test Flask application
+# تست اجرای Flask
 make run
-# or
-python backend/app.py
+# یا
+python app.py
 
-# Open browser
+# باز کردن مرورگر
 open http://localhost:5000
 ```
 
-### 3. Docker Testing
+### 3. تست Docker
 
 ```bash
 # Build image
 make build
-# or
+# یا
 docker build -t vocab-learner .
 
 # Run container
 make docker-run
-# or
+# یا
 docker run -d -p 5000:5000 vocab-learner
 
-# Test
+# تست
 curl http://localhost:5000/health
 ```
 
-### 4. Docker Compose Testing
+### 4. تست Docker Compose
 
 ```bash
 make docker-compose-up
-# or
+# یا
 docker-compose up -d
 
-# View logs
+# مشاهده لاگ‌ها
 make docker-logs
-# or
+# یا
 docker-compose logs -f
 ```
 
-## Push to Git Repository
+## Push به Git Repository
 
-### Create New Repository
+### ایجاد Repository جدید
 
 ```bash
-# Initialize git (if not already done)
+# Initialize git (اگر قبلاً انجام نشده)
 git init
 
-# Add remote
+# اضافه کردن remote
 git remote add origin <your-repo-url>
 
-# Add files
+# اضافه کردن فایل‌ها
 git add .
 
 # Commit
@@ -82,7 +82,7 @@ git commit -m "Initial commit: Vocabulary Learning App with Docker and Helm"
 git push -u origin main
 ```
 
-### Git File Structure
+### ساختار فایل‌های Git
 
 ```
 vocab-learner/
@@ -90,23 +90,16 @@ vocab-learner/
 │   └── workflows/
 │       ├── ci.yml
 │       └── helm-deploy.yml
-├── backend/
-│   ├── app.py
-│   ├── vocab_learner.py
-│   └── daily_review.py
-├── frontend/
-│   ├── static/
-│   │   ├── css/
-│   │   └── js/
-│   ├── templates/
-│   │   └── index.html
-│   ├── package.json
-│   └── tsconfig.json
 ├── helm/
 │   └── vocab-learner/
 │       ├── Chart.yaml
 │       ├── values.yaml
 │       └── templates/
+├── static/
+│   ├── css/
+│   └── js/
+├── templates/
+│   └── index.html
 ├── .dockerignore
 ├── .gitignore
 ├── Dockerfile
@@ -114,19 +107,22 @@ vocab-learner/
 ├── README.md
 ├── DEPLOY.md
 ├── KUBERNETES.md
+├── app.py
+├── daily_review.py
 ├── docker-compose.yml
-└── requirements.txt
+├── requirements.txt
+└── vocab_learner.py
 ```
 
-## Push to Docker Hub
+## Push به Docker Hub
 
-### 1. Login to Docker Hub
+### 1. Login به Docker Hub
 
 ```bash
 docker login
 ```
 
-### 2. Tag and Push
+### 2. Tag و Push
 
 ```bash
 # Tag image
@@ -135,37 +131,37 @@ docker tag vocab-learner:latest <your-dockerhub-username>/vocab-learner:latest
 # Push
 docker push <your-dockerhub-username>/vocab-learner:latest
 
-# Or with version
+# یا با version
 docker tag vocab-learner:latest <your-dockerhub-username>/vocab-learner:v1.0.0
 docker push <your-dockerhub-username>/vocab-learner:v1.0.0
 ```
 
-### 3. Use Image in docker-compose
+### 3. استفاده از Image در docker-compose
 
-Edit `docker-compose.yml`:
+ویرایش `docker-compose.yml`:
 
 ```yaml
 services:
   vocab-app:
     image: <your-dockerhub-username>/vocab-learner:latest
-    # build: .  # Comment this line
+    # build: .  # این خط را comment کنید
 ```
 
-## Deploy to Kubernetes
+## استقرار در Kubernetes
 
-### With Helm
+### با Helm
 
 ```bash
-# Install
+# نصب
 helm install vocab-learner ./helm/vocab-learner \
   --set image.repository=<your-dockerhub-username>/vocab-learner \
   --set image.tag=latest
 
-# Or with values file
+# یا با values file
 helm install vocab-learner ./helm/vocab-learner -f values-custom.yaml
 ```
 
-### Check Deployment
+### بررسی استقرار
 
 ```bash
 # Pods
@@ -178,54 +174,54 @@ kubectl get svc vocab-learner
 kubectl logs -l app.kubernetes.io/name=vocab-learner -f
 ```
 
-## CI/CD with GitHub Actions
+## CI/CD با GitHub Actions
 
-### Configure Secrets in GitHub
+### تنظیم Secrets در GitHub
 
 1. Settings > Secrets and variables > Actions
-2. Add:
-   - `DOCKER_USERNAME`: Docker Hub username
-   - `DOCKER_PASSWORD`: Docker Hub password
-   - `KUBECONFIG`: kubeconfig file content (for Kubernetes)
+2. اضافه کردن:
+   - `DOCKER_USERNAME`: نام کاربری Docker Hub
+   - `DOCKER_PASSWORD`: رمز عبور Docker Hub
+   - `KUBECONFIG`: محتوای فایل kubeconfig (برای Kubernetes)
 
-### Using Workflows
+### استفاده از Workflows
 
-Workflows run automatically:
-- `ci.yml`: On every push/PR
-- `helm-deploy.yml`: On push of v* tags
+Workflow ها به صورت خودکار اجرا می‌شوند:
+- `ci.yml`: در هر push/PR
+- `helm-deploy.yml`: در push tag های v*
 
-## Important Notes
+## نکات مهم
 
-1. **Environment Variables**: Use secrets for production
-2. **Persistent Storage**: Configure storage class in Kubernetes
-3. **Resource Limits**: Adjust based on needs
-4. **Health Checks**: The `/health` endpoint is used for monitoring
-5. **Security**: Add HTTPS and authentication for production
+1. **Environment Variables**: برای production، از secrets استفاده کنید
+2. **Persistent Storage**: در Kubernetes، storage class را تنظیم کنید
+3. **Resource Limits**: بر اساس نیاز تنظیم کنید
+4. **Health Checks**: endpoint `/health` برای monitoring استفاده می‌شود
+5. **Security**: در production، HTTPS و authentication اضافه کنید
 
 ## Troubleshooting
 
-### Build Issues
+### مشکل در Build
 
 ```bash
-# Check Dockerfile
+# بررسی Dockerfile
 docker build --no-cache -t vocab-learner .
 
-# Check logs
+# بررسی logs
 docker build -t vocab-learner . 2>&1 | tee build.log
 ```
 
-### Run Issues
+### مشکل در Run
 
 ```bash
-# Check container
+# بررسی container
 docker ps -a
 docker logs <container-id>
 
-# Check port
+# بررسی port
 netstat -an | grep 5000
 ```
 
-### Kubernetes Issues
+### مشکل در Kubernetes
 
 ```bash
 # Describe pod
@@ -240,35 +236,9 @@ kubectl logs <pod-name> --previous
 
 ## Next Steps
 
-1. ✅ Push to Git
-2. ✅ Build and Push to Docker Hub
-3. ✅ Deploy to Kubernetes
-4. ✅ Configure CI/CD
-5. ✅ Add Monitoring
-6. ✅ Add Authentication (optional)
-
-## Deploy the Backend for GitHub Pages (Recommended)
-
-GitHub Pages cannot run the Python backend. To make the GitHub Pages UI work, deploy the backend and then set the backend URL in the UI (or use `?api=...`).
-
-### Option A: Render (Docker)
-
-1. Push this repository to GitHub (already done)
-2. In Render, create a new **Web Service** from this repo
-3. Render will detect `render.yaml` and deploy automatically
-4. When you get a URL like `https://your-service.onrender.com`, open:
-
-`https://ali-m07.github.io/vocab-learner/?api=https://your-service.onrender.com`
-
-### Option B: Fly.io (Docker)
-
-1. Install Fly CLI
-2. Login: `fly auth login`
-3. From the repo root:
-
-```bash
-fly launch --no-deploy
-fly deploy
-```
-
-4. Use the Fly URL in GitHub Pages via the `?api=` parameter.
+1. ✅ Push به Git
+2. ✅ Build و Push به Docker Hub
+3. ✅ استقرار در Kubernetes
+4. ✅ تنظیم CI/CD
+5. ✅ اضافه کردن Monitoring
+6. ✅ اضافه کردن Authentication (اختیاری)

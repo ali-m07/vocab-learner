@@ -24,7 +24,6 @@ venv/
 ENV/
 env/
 .venv
-.venv-gen/
 
 # IDE
 .vscode/
@@ -36,8 +35,8 @@ env/
 # Data files
 *.csv
 *.apkg
-/data/
-/uploads/
+data/
+uploads/
 daily_words_*.csv
 
 # Environment
@@ -64,6 +63,3 @@ yarn-error.log*
 *.js.map
 *.d.ts
 !static/js/app.js
-
-# Build output
-_site/

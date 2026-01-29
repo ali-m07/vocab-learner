@@ -1,32 +1,13 @@
 {
   "name": "vocab-learner",
   "version": "1.0.0",
-  "description": "Modern vocabulary learning application with translation support",
-  "main": "backend/app.py",
+  "description": "Vocabulary Learning Application",
   "scripts": {
-    "install": "pip install -r requirements.txt && cd frontend && npm install",
-    "build": "cd frontend && npm run build && cd .. && python3 build_static.py",
-    "start": "python backend/app.py",
-    "dev": "cd frontend && npm run watch"
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "tsc --watch"
   },
-  "keywords": [
-    "vocabulary",
-    "learning",
-    "translation",
-    "anki",
-    "education",
-    "language-learning"
-  ],
-  "author": "Ali Mansouri",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ali-m07/vocab-learner.git"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "python": ">=3.11.0"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
 }
