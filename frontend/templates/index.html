@@ -37,6 +37,22 @@
             <section class="control-panel">
                 <div class="panel-card">
                     <h2>🎯 Control Panel</h2>
+                    <div class="control-group" style="margin-bottom: 12px;">
+                        <div class="form-group">
+                            <label for="apiBaseInput">Backend URL (optional):</label>
+                            <input id="apiBaseInput" class="search-input" placeholder="https://your-backend.example.com" />
+                        </div>
+                        <div class="button-group" style="justify-content: flex-start;">
+                            <button class="btn btn-info" type="button" id="apiBaseSaveBtn">
+                                <span class="btn-icon">🔗</span>
+                                Save backend
+                            </button>
+                            <button class="btn btn-secondary" type="button" id="apiBaseClearBtn">
+                                <span class="btn-icon">↩</span>
+                                Use same origin
+                            </button>
+                        </div>
+                    </div>
                     <div class="control-group">
                         <div class="form-group">
                             <label for="languageSelect">Target Language:</label>

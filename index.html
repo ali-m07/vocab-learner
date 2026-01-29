@@ -1,77 +1,160 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vocabulary Learner</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="frontend/static/css/style.css" />
-  </head>
-  <body>
-    <div class="container">
-      <header class="header">
-        <div class="header-content">
-          <div class="logo-section">
-            <h1 class="logo">Vocabulary Learner</h1>
-            <p class="tagline">Learn vocabulary with a clean, fast UI</p>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocabulary Learner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-content">
+        <div class="logo-section">
+          <h1 class="logo">Vocabulary Learner</h1>
+          <p class="tagline">Learn words with translation and real usage examples</p>
+        </div>
+        <div class="stats-bar" id="statsBar">
+          <div class="stat-item">
+            <span class="stat-label">Total Words</span>
+            <span class="stat-value" id="totalWords">0</span>
           </div>
-          <div class="stats-bar" id="statsBar">
-            <div class="stat-item">
-              <span class="stat-label">Mode</span>
-              <span class="stat-value">Demo</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Words</span>
-              <span class="stat-value" id="demoCount">0</span>
-            </div>
+          <div class="stat-item">
+            <span class="stat-label">Translated</span>
+            <span class="stat-value" id="translatedWords">0</span>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <main class="main-content">
-        <section class="control-panel">
-          <div class="panel-card">
-            <h2>Learn vocabulary with a modern UI</h2>
-            <p style="color: var(--text-secondary); margin-top: 8px; max-width: 70ch">
-              GitHub Pages can only host static files. To get translations in your language and usage examples,
-              run the backend locally or deploy it (Docker/Kubernetes).
-            </p>
+    <main class="main-content">
+      <section class="control-panel">
+        <div class="panel-card">
+          <h2>Control Panel</h2>
 
-            <div class="button-group" style="margin-top: 16px">
-              <a class="btn btn-primary" href="README.md">Read the setup</a>
-              <a class="btn btn-info" href="GITHUB_PAGES.md">Pages guide</a>
-              <a class="btn btn-success" href="DEPLOY.md">Deploy backend</a>
+          <div class="control-group" style="margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="apiBaseInput">Backend URL (optional):</label>
+              <input id="apiBaseInput" class="search-input" placeholder="https://your-backend.example.com">
+              <div style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">
+                Tip: deploy the backend (Fly.io/Render/etc.) and paste the URL here, or use
+                <code>?api=https://your-backend.example.com</code>.
+              </div>
+            </div>
+            <div class="button-group" style="justify-content: flex-start;">
+              <button class="btn btn-info" type="button" id="apiBaseSaveBtn">
+                <span class="btn-icon">🔗</span>
+                Save backend
+              </button>
+              <button class="btn btn-secondary" type="button" id="apiBaseClearBtn">
+                <span class="btn-icon">↩</span>
+                Use same origin
+              </button>
             </div>
           </div>
-        </section>
 
-        <section class="words-section">
-          <div class="panel-card" style="animation: pop 420ms ease-out both">
-            <h3 style="margin-bottom: 8px">App sections</h3>
-            <ul style="color: var(--text-secondary); padding-left: 18px; display: grid; gap: 6px">
-              <li><strong>Learn</strong> — daily words and review flow</li>
-              <li><strong>Search</strong> — search/filter words + examples (where the word is used)</li>
-              <li><strong>Anki</strong> — export deck for spaced repetition</li>
-              <li><strong>Settings</strong> — pick your language (auto-selected from your browser)</li>
-            </ul>
-            <p style="color: var(--text-secondary); margin-top: 10px">
-              Open the full app by running <code>python backend/app.py</code>.
-            </p>
+          <div class="control-group">
+            <div class="form-group">
+              <label for="languageSelect">Target Language:</label>
+              <select id="languageSelect" class="select-input">
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div class="form-group checkbox-group">
+              <label for="includeDetails">
+                <input type="checkbox" id="includeDetails" checked>
+                Include word details (definition, type, examples)
+              </label>
+            </div>
           </div>
-        </section>
-      </main>
 
-      <footer class="footer">
-        <p>Static demo on GitHub Pages. Full app requires backend.</p>
-      </footer>
-    </div>
+          <div class="button-group">
+            <button class="btn btn-primary" id="downloadBtn">
+              <span class="btn-icon">⬇</span>
+              Download & Translate Dataset
+            </button>
+            <button class="btn btn-success" id="createAnkiBtn">
+              <span class="btn-icon">🃏</span>
+              Create Anki Deck
+            </button>
+            <button class="btn btn-info" id="dailyReviewBtn">
+              <span class="btn-icon">📖</span>
+              Daily Review
+            </button>
+          </div>
+        </div>
+      </section>
 
-    <div class="toast" id="toast"></div>
-  </body>
+      <section class="search-section">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search words..." class="search-input">
+          <button class="search-btn" id="searchBtn">Search</button>
+        </div>
+        <div class="filter-group">
+          <label for="wordTypeFilter">Filter by type:</label>
+          <select id="wordTypeFilter" class="select-input">
+            <option value="">All Types</option>
+            <option value="noun">Noun</option>
+            <option value="verb">Verb</option>
+            <option value="adjective">Adjective</option>
+            <option value="adverb">Adverb</option>
+            <option value="pronoun">Pronoun</option>
+            <option value="preposition">Preposition</option>
+            <option value="conjunction">Conjunction</option>
+            <option value="interjection">Interjection</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="words-section">
+        <div class="section-header">
+          <h2>Vocabulary List</h2>
+          <div class="pagination-controls">
+            <button class="btn-icon-only" id="firstPage" title="First page">«</button>
+            <button class="btn-icon-only" id="prevPage" title="Previous page">‹</button>
+            <div class="page-numbers" id="pageNumbers"></div>
+            <button class="btn-icon-only" id="nextPage" title="Next page">›</button>
+            <button class="btn-icon-only" id="lastPage" title="Last page">»</button>
+            <span class="page-info" id="pageInfo">Page 1 of 1</span>
+          </div>
+        </div>
+
+        <div class="words-grid" id="wordsGrid">
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal" id="dailyModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Daily Review</h2>
+            <button class="close-btn" id="closeModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="daily-controls">
+              <label>Number of words:</label>
+              <input type="number" id="dailyCount" value="50" min="1" max="200" class="number-input">
+              <button class="btn btn-primary" id="loadDailyBtn">Load</button>
+            </div>
+            <div class="daily-words" id="dailyWords"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Tip: GitHub Pages UI needs a backend URL for real data.</p>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="static/js/app.js"></script>
+</body>
 </html>
 

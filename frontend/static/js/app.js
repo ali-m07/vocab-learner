@@ -1,6 +1,25 @@
 "use strict";
-// API Base URL
-const API_BASE = '';
+function getApiBase() {
+    // 1) Query param override: ?api=https://your-backend.example.com
+    // 2) localStorage override (persisted)
+    // 3) default: same origin (empty string)
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const qp = (params.get('api') || '').trim();
+        if (qp)
+            return qp.replace(/\/+$/, '');
+    }
+    catch { /* noop */ }
+    try {
+        const stored = (localStorage.getItem('apiBase') || '').trim();
+        if (stored)
+            return stored.replace(/\/+$/, '');
+    }
+    catch { /* noop */ }
+    return '';
+}
+// API Base URL (dynamic)
+let API_BASE = getApiBase();
 function guessLanguageCode() {
     const navLang = (navigator.language || '').toLowerCase(); // e.g. "fr-fr"
     const code = navLang.split('-')[0] || '';
@@ -30,6 +49,44 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Event Listeners
 function setupEventListeners() {
+    // Backend URL settings (for GitHub Pages / separate backend)
+    const apiBaseInput = document.getElementById('apiBaseInput');
+    const apiBaseSaveBtn = document.getElementById('apiBaseSaveBtn');
+    const apiBaseClearBtn = document.getElementById('apiBaseClearBtn');
+    if (apiBaseInput) {
+        apiBaseInput.value = API_BASE;
+    }
+    if (apiBaseSaveBtn) {
+        apiBaseSaveBtn.addEventListener('click', () => {
+            const value = (apiBaseInput?.value || '').trim().replace(/\/+$/, '');
+            try {
+                localStorage.setItem('apiBase', value);
+            }
+            catch { /* noop */ }
+            API_BASE = value;
+            showToast(value ? `Backend set to: ${value}` : 'Using same-origin backend', 'success');
+            state.currentPage = 1;
+            loadLanguages();
+            loadStats();
+            loadWords();
+        });
+    }
+    if (apiBaseClearBtn) {
+        apiBaseClearBtn.addEventListener('click', () => {
+            try {
+                localStorage.removeItem('apiBase');
+            }
+            catch { /* noop */ }
+            API_BASE = '';
+            if (apiBaseInput)
+                apiBaseInput.value = '';
+            showToast('Backend cleared. Using same-origin backend.', 'success');
+            state.currentPage = 1;
+            loadLanguages();
+            loadStats();
+            loadWords();
+        });
+    }
     // Download button
     const downloadBtn = document.getElementById('downloadBtn');
     if (downloadBtn) {
